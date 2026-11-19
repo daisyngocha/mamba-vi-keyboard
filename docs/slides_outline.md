@@ -85,10 +85,10 @@ Nguyên tắc cho mọi slide kết quả:
 ## Mốc thời gian
 | Mốc | Hạn |
 |---|---|
-| Khung slide với biểu đồ giữ chỗ (placeholder) + `make_figures.ipynb` chạy với kết quả smoke test | 10/12 |
-| Số liệu cuối E1–E4, chèn vào slide | 17/12 |
-| Tập dượt lần 1 (bấm giờ, cả nhóm hỏi vặn) | 20/12 |
-| Tập dượt lần 2 + chốt appendix | 23/12 |
+| Khung slide với biểu đồ giữ chỗ (placeholder) + `make_figures.ipynb` chạy với kết quả smoke test | 06/12 |
+| Số liệu cuối E1–E4, chèn vào slide | 12/12 |
+| Tập dượt lần 1 (bấm giờ, cả nhóm hỏi vặn) | 14/12 |
+| Tập dượt lần 2 + chốt appendix — **slide hoàn chỉnh** | 16/12 |
 | **Báo cáo buổi 2** | **26/12** |
 
 ## Chuẩn bị Q&A (mỗi người soạn câu trả lời ≤ 5 dòng cho câu được giao)

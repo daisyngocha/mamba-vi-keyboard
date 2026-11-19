@@ -67,11 +67,11 @@ Giống nhau cho cả 2 mô hình: dữ liệu, vocab, seq_len train = 256, batc
 ## 8. Timeline
 | Tuần | Thời gian | Mục tiêu |
 |---|---|---|
-| 1 | 20–26/11 | Repo, dữ liệu, 2 model chạy end-to-end, sanity test |
-| 2 | 27/11–03/12 | Train đầy đủ E2 (1 seed), chạy E1, bộ eval hoàn chỉnh |
-| 3 | 04–10/12 | E3 benchmark, E4 latency + demo, khung slide với biểu đồ giữ chỗ |
-| 4 | 11–17/12 | Chạy thêm seed, ablation (nếu kịp), chốt số liệu cuối, bản nháp slide đầy đủ |
-| 5 | 18–25/12 | Hoàn thiện slide, tập dượt 20/12 và 23/12, chuẩn bị Q&A |
+| 1 | 20–26/11 | Repo, dữ liệu, 2 model chạy end-to-end, sanity test, dàn ý slide |
+| 2 | 27/11–03/12 | Train đầy đủ E2, chạy E1, bộ eval hoàn chỉnh |
+| 3 | 04–10/12 | E3 benchmark, demo E4, bản nháp slide đầy đủ |
+| 4 | 11–17/12 | Hoàn thiện slide, tập dượt 2 lần, chuẩn bị Q&A — **hoàn thành toàn bộ trước 17/12** |
+| — | 18–25/12 | Dự phòng (không lên kế hoạch việc mới) |
 | — | **26/12** | **Báo cáo buổi 2** |
 
 ## 9. Phân công tuần 1 (D6)
