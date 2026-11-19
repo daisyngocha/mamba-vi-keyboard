@@ -1,0 +1,12 @@
+base: base.yaml
+data:
+  source: wiki_vi
+model:
+  name: transformer
+  d_model: 256
+  n_layer: 4
+  n_head: 4
+  ffn_mult: 4
+  max_seq_len: 4096       # đủ cho benchmark độ dài chuỗi E3
+train:
+  lr: 1.0e-3              # [CHỐT D4] quét {3e-4, 1e-3}

@@ -1,0 +1,9 @@
+# Kaggle đã có sẵn torch + CUDA; KHÔNG cài lại torch trên Kaggle.
+torch>=2.1
+numpy
+pyyaml
+datasets>=2.18      # tải wikimedia/wikipedia
+tqdm
+pandas
+matplotlib
+# Tuỳ chọn (chỉ trên GPU Linux): mamba-ssm, causal-conv1d

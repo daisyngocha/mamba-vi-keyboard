@@ -1,0 +1,18 @@
+# Chạy thử pipeline trong < 1 phút, CPU cũng chạy được.
+base: base.yaml
+run_name: smoke
+data:
+  source: synthetic
+  seq_len: 64
+  batch_size: 16
+  num_workers: 0
+model:
+  name: dummy
+  d_model: 64
+train:
+  max_steps: 60
+  warmup_steps: 10
+  log_every: 10
+  eval_every: 30
+  eval_batches: 5
+  save_every: 60

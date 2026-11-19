@@ -1,0 +1,13 @@
+base: base.yaml
+data:
+  source: wiki_vi
+model:
+  name: mamba_pt          # mamba_pt (tự cài đặt) | mamba_ssm (package CUDA)
+  d_model: 256
+  n_layer: 8              # ~2 Mamba block / 1 Transformer layer; chỉnh sau khi đếm tham số
+  d_state: 16
+  d_conv: 4
+  expand: 2
+  dt_rank: auto           # ceil(d_model / 16)
+train:
+  lr: 1.0e-3

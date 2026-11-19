@@ -1,0 +1,31 @@
+# Cấu hình chung — mọi run kế thừa file này. File model chỉ ghi đè phần khác biệt.
+run_name: null            # để null -> tự sinh <model>_<timestamp>
+seed: 42
+output_dir: results
+
+data:
+  source: synthetic       # synthetic (smoke test) | wiki_vi (sau khi Thu Hằng xong dataset.py)
+  data_dir: data/processed
+  seq_len: 256
+  batch_size: 64
+  num_workers: 2
+  lowercase: true
+
+model:
+  name: dummy             # dummy | transformer | mamba_pt | mamba_ssm
+  d_model: 256
+  n_layer: 4
+  dropout: 0.0
+
+train:
+  max_steps: 20000
+  lr: 1.0e-3
+  weight_decay: 0.1
+  betas: [0.9, 0.95]
+  warmup_steps: 500
+  grad_clip: 1.0
+  amp: true               # chỉ bật khi có CUDA
+  log_every: 50
+  eval_every: 1000
+  eval_batches: 50
+  save_every: 5000
