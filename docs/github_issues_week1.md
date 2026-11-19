@@ -51,3 +51,32 @@ Cài đặt `src/evaluate.py` và `src/benchmark.py` theo docstring. Dùng check
 - [ ] `docs/slides_outline.md` v1.0, phân người viết từng phần
 - [ ] T2 24/11: ghép pipeline, chạy 200 bước mỗi model
 - [ ] T3–T4: sanity test + train ngắn (~1h GPU/model) + benchmark lần đầu; tổng kết tuần 1
+
+### #6 [Lead] Chạy smoke test trên kagle
+**Assignee:** Lê Thị Ngọc Hà
+# summary.json (kết quả chạy smoke test trên kagle)
+   {
+  "run_name": "smoke",
+  "model": "dummy",
+  "params": 10739,
+  "steps": 60,
+  "best_val_loss": 2.9529,
+  "best_val_bpc": 4.2602,
+  "mean_tokens_per_s": 317923,
+  "peak_mem_mb": 18.5,
+  "train_time_s": 0.5,
+  "device": "Tesla T4"
+   }
+# metrics.csv (kết quả chạy smoke test trên kagle)
+   step	split	loss	bpc	lr	tokens_per_s	peak_mem_mb	elapsed_s
+   0	10	train	3.7895	5.4671	0.001000	32816.0	18.0	0.3
+   1	20	train	3.5495	5.1208	0.000930	374550.0	18.0	0.3
+   2	30	train	3.2821	4.7351	0.000716	396410.0	18.0	0.4
+   3	30	val	3.2783	4.7295	NaN	NaN	NaN	0.4
+   4	40	train	3.0901	4.4581	0.000438	325266.0	18.0	0.4
+   5	50	train	2.9982	4.3255	0.000203	387613.0	18.0	0.4
+   6	60	train	2.9647	4.2771	0.000101	390883.0	18.0	0.4
+   7	60	val	2.9529	4.2602	NaN	NaN	NaN	0.5
+
+
+
