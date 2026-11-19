@@ -1,7 +1,7 @@
 # GitHub Issues — Tuần 1 (20–26/11, N1–N7)
 
-Nội dung các issue tuần 1, viết lại theo *Hướng dẫn công việc Tuần 1 theo vai trò (v1)*. Cập nhật lại nội dung issue #2–#6 trên GitHub theo file này.
-Label: `data` / `model` / `train-eval` / `lead` · Milestone: `Tuần 1 – nền tảng dùng chung`.
+Nội dung các issue tuần 1, viết lại theo *Hướng dẫn công việc Tuần 1 theo vai trò (v1)*. Đã cập nhật lên issue #2–#6 trên GitHub ngày 19/11.
+Label: `dataset` / `model` / `evaluation` / `leader` · Milestone: `Deadline Tuần 1 (Chuẩn bị môi trường + Smoke test)`.
 Nhánh: `<mã>/<việc>` (vd `dl/prepare`, `mb/mamba-lm`). Mốc in đậm là điểm người khác đang chờ.
 
 | Mã | Vai trò | Thành viên |
