@@ -18,7 +18,7 @@ Mẹo điều phối: mỗi mục [CHỐT] thảo luận tối đa 2 phút; chư
 ## Decision log
 | # | Vấn đề | Đề xuất của lead | Quyết định | Ghi chú |
 |---|---|---|---|---|
-| D1 | Ngày nộp/thuyết trình chính xác | ~17/12 | | |
+| D1 | Ngày + thời lượng buổi báo cáo 2 (chỉ thực nghiệm) | 26/12/2026, 30' + 15' Q&A | | |
 | D2 | Thêm corpus tin tức ngoài Wikipedia? | Không ở tuần 1; cân nhắc tuần 2 | | |
 | D3 | Chuyển chữ thường? | Có | | |
 | D4 | Quét lr cho Transformer | {3e-4, 1e-3} | | |
