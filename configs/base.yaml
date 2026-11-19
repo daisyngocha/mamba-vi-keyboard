@@ -1,31 +1,41 @@
-# Cấu hình chung — mọi run kế thừa file này. File model chỉ ghi đè phần khác biệt.
-run_name: null            # để null -> tự sinh <model>_<timestamp>
-seed: 42
-output_dir: results
+# Cấu hình chung (TN). Mọi lượt chạy kế thừa file này; mamba.yaml / transformer.yaml chỉ ghi đè phần khác.
+# Nguồn: docs/Mo_ta_bai_toan_thuc_nghiem_Mamba_v1.docx mục 4.1 và docs/Huong_dan_Tuan1_theo_vai_tro_v1.docx mục 3–4.
+# Giá trị đánh dấu [đề xuất] chốt ở buổi review N7 (26/11).
+
+run_name: null            # null -> tự đặt <model>_L<seq_len>_s<seed>, vd mamba_L1024_s0
+seed: 0                   # 3 seed {0,1,2} tại L = 1024; các L khác 1 seed (0)
 
 data:
-  source: synthetic       # synthetic (smoke test) | wiki_vi (sau khi Thu Hằng xong dataset.py)
-  data_dir: data/processed
-  seq_len: 256
-  batch_size: 64
-  num_workers: 2
-  lowercase: true
+  source: wiki_vi         # wiki_vi | synthetic (chỉ cho smoke test)
+  # Thư mục chứa train/val/test.bin, vocab.json, meta.json, sample.bin.
+  # null -> tự dò: /kaggle/input/mamba-btl-data (Kaggle) rồi data/processed (máy cá nhân).
+  data_dir: null
+  train_file: train.bin   # đổi sang sample.bin để thử code khi chưa có bộ đầy đủ
+  seq_len: 256            # biến chính L ∈ {256, 1024, 4096}
 
 model:
-  name: dummy             # dummy | transformer | mamba_pt | mamba_ssm
-  d_model: 256
+  name: dummy             # mamba | transformer | dummy (smoke test)
+  d_model: 384            # [đề xuất] ≈ 8M tham số; MB và TF chỉnh để lệch nhau ≤ 5%
   n_layer: 4
-  dropout: 0.0
+  tie_embeddings: true    # dùng chung cho cả 2 model: embedding -> lõi -> RMSNorm -> lm_head
 
 train:
-  max_steps: 20000
+  # Batch tính theo KÝ TỰ: batch_size = batch_chars // seq_len, nên mỗi bước thấy cùng số ký tự ở mọi L.
+  batch_chars: 32768      # [đề xuất] L=256 -> B=128 · L=1024 -> B=32 · L=4096 -> B=8
+  grad_accum: 1           # tăng nếu OOM, giữ nguyên batch_chars hiệu dụng
+  train_chars: 200_000_000  # [đề xuất] tổng ký tự huấn luyện (≈ 4 epoch của 50M), như nhau cho mọi lượt
+  optimizer: adamw
   lr: 1.0e-3
-  weight_decay: 0.1
   betas: [0.9, 0.95]
-  warmup_steps: 500
+  weight_decay: 0.1
+  warmup_frac: 0.02       # warmup tuyến tính rồi cosine về 10% lr
   grad_clip: 1.0
-  amp: true               # chỉ bật khi có CUDA
-  log_every: 50
-  eval_every: 1000
-  eval_batches: 50
-  save_every: 5000
+  precision: fp16         # fp16 (autocast + GradScaler) | fp32 — chốt ở N7 theo kết quả MB/TF
+  eval_every: 250         # bước
+  eval_batches: 20        # số batch val CỐ ĐỊNH (seed riêng) để các lần đo so sánh được
+  log_every: 50           # bước
+  ckpt_every_min: 15      # lưu checkpoint mỗi 15–20 phút
+
+paths:
+  checkpoint_dir: checkpoints   # checkpoints/<run_name>/ckpt_latest.pt (Kaggle: /kaggle/working/checkpoints)
+  log_dir: logs                 # logs/<run_name>.csv

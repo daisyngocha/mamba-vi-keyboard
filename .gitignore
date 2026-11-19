@@ -1,11 +1,18 @@
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+.pytest_cache/
+
+# Dữ liệu, checkpoint, wheel: để trên Kaggle Datasets / output notebook, không đưa lên repo
 data/raw/
 data/processed/
-results/*
-!results/.gitkeep
+checkpoints/
 *.pt
 *.bin
+*.whl
+
+# Log chạy thử; log CSV cuối của từng lượt chạy thì commit vào logs/
+logs/_smoke/
+
 wandb/
 .env

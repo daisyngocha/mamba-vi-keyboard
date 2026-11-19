@@ -1,56 +1,70 @@
-# GitHub Issues — Tuần 1 (20–26/11)
+# GitHub Issues — Tuần 1 (20–26/11, N1–N7)
 
-Mẫu nội dung các issue tuần 1. Số issue khớp với GitHub (#1 là PR khởi tạo repo).
-Label: `dataset` / `model` / `evaluation` / `leader` · Milestone: `Deadline Tuần 1 (Chuẩn bị môi trường + Smoke test)`.
-Deadline PR chung: **CN 23/11 22:00**. Sync ghép pipeline: **T2 24/11 21:00**. Tổng kết: **T4 26/11 21:00**.
+Nội dung các issue tuần 1, viết lại theo *Hướng dẫn công việc Tuần 1 theo vai trò (v1)*. Cập nhật lại nội dung issue #2–#6 trên GitHub theo file này.
+Label: `data` / `model` / `train-eval` / `lead` · Milestone: `Tuần 1 – nền tảng dùng chung`.
+Nhánh: `<mã>/<việc>` (vd `dl/prepare`, `mb/mamba-lm`). Mốc in đậm là điểm người khác đang chờ.
+
+| Mã | Vai trò | Thành viên |
+|---|---|---|
+| TN | Trưởng nhóm | Lê Thị Ngọc Hà |
+| DL | Dữ liệu | Ngô Thị Thu Hằng |
+| MB | Mô hình Mamba | Nguyễn Tiến Dũng |
+| TF | Mô hình Transformer | Đặng Duyên Hà |
+| ĐG | Huấn luyện & đánh giá | Cao Thanh Hằng |
 
 ---
 
-### #2 [Data] Chuẩn bị dữ liệu Wikipedia tiếng Việt
-**Assignee:** Ngô Thị Thu Hằng · **Deadline PR:** CN 23/11
-Cài đặt `data/prepare_data.py` theo docstring trong file và `docs/scope.md` mục 3.
-**Hoàn thành khi:**
-- [ ] `data/processed/` có `vocab.json`, `train/val/test.bin`, `stats.json`, `wordsuggest_test.jsonl` (2.000 dòng)
-- [ ] Chia theo bài viết, seed 42; vocab 100–150 ký tự; tỉ lệ `<unk>` < 0.1%
-- [ ] Đã NFC-normalize; in 5 mẫu decode để kiểm tra bằng mắt (dán vào PR)
-- [ ] `python -m src.train --config configs/mamba.yaml --set model.name=dummy --set train.max_steps=100` chạy được với data thật
-- [ ] Upload `data/processed/` lên **Kaggle Dataset** (private, share cho nhóm) để mọi người khỏi xử lý lại
+### #2 [DL] Dữ liệu Wikipedia tiếng Việt + loader
+**Nhánh:** `dl/prepare`, `dl/loader` · **Mốc:** **sample.bin N2 (21/11)**, **bộ đầy đủ N5 (24/11)**
+Đặc tả trong docstring `data/prepare.py` và `data/loader.py`.
+- [ ] Khảo sát ≈ 5.000 bài (phân bố độ dài, tỷ lệ bài < 2.000 ký tự, tần suất ký tự) — lưu bảng/biểu đồ
+- [ ] NFC, gộp khoảng trắng, bỏ bài < 2.000 ký tự, **giữ chữ hoa**
+- [ ] Chia theo bài viết, seed cố định: test ≈ 1M, val ≈ 1M, train ≈ 50M ký tự
+- [ ] Từ vựng từ train phủ ≥ 99,9% (≈ 200–300 ký tự), id 0 `<unk>`, id 1 `<doc>`
+- [ ] `train/val/test.bin` uint16, `vocab.json`, `meta.json`, `sample.bin` lên Kaggle Dataset `mamba-btl-data`
+- [ ] `data/loader.py`: `WikiCharData` đọc bằng `np.memmap`, `get_batch(split, batch_size, seq_len, step, seed)` xác định
+- [ ] `tests/test_loader.py`: encode/decode, `<unk>` < 0,1% trên val, không trùng bài giữa các tập, cùng seed + step -> cùng batch
+- [ ] 1 trang ghi chú số liệu dữ liệu (cho chương Dữ liệu)
+- [ ] Nếu kịp: tập mô phỏng gõ phím ≈ 2.000 vị trí trong test (định dạng thống nhất với ĐG)
 
-### #3 [Model] Transformer baseline + hoàn thiện train.py
-**Assignee:** Đặng Duyên Hà · **Deadline PR:** CN 23/11
-Cài đặt `src/models/transformer.py` theo docstring.
-**Hoàn thành khi:**
-- [ ] Đúng interface `forward(idx[B,T]) -> logits[B,T,V]`, causal (có unit test đổi token tương lai không đổi logits quá khứ)
-- [ ] In số tham số với `configs/transformer.yaml` (mục tiêu ~3–3.5M)
-- [ ] Overfit 1 batch (loss < 0.1) — dán log
-- [ ] Chạy được với `max_seq_len` 4096 (cho benchmark)
-- [ ] `mean_tokens_per_s` trong `summary.json` bỏ khoảng log đầu tiên (CUDA warmup)
-- [ ] Đề xuất cải tiến `train.py` nếu cần (vd gradient accumulation) — mở PR riêng
+### #3 [TF] TransformerLM
+**Nhánh:** `tf/transformer-lm` · Dùng `sample.bin` (N2) và `train.py` (N3)
+Đặc tả trong docstring `models/transformer_lm.py`.
+- [ ] Kế thừa `models.base.BaseCharLM`; 4 block pre-norm RMSNorm, attention nhân quả SDPA `is_causal=True`, RoPE, MLP 4×
+- [ ] `pytest tests/test_models.py`: shape + tính nhân quả pass
+- [ ] Cân tham số với MB: ≈ 8M, lệch ≤ 5% (`test_param_balance` pass)
+- [ ] L = 4.096 trên T4, ép `EFFICIENT_ATTENTION`, batch 1/2/4 -> bảng bộ nhớ đỉnh (OOM thì ghi nhận)
+- [ ] 500 bước fp16 trên dữ liệu thật bằng `train.py` — loss giảm, không NaN (dán log)
+- [ ] Nếu kịp: phác thảo KV cache cho tuần 2
 
-### #4 [Model] Mamba tự cài đặt (PyTorch thuần) + thử mamba-ssm
-**Assignee:** Nguyễn Tiến Dũng · **Deadline PR:** CN 23/11 (mamba_pt), T4 26/11 (mamba_ssm)
-Cài đặt `src/models/mamba_pt.py` theo docstring (Section 3 + Figure 3 paper).
-**Hoàn thành khi:**
-- [ ] Đúng interface, causal (unit test)
-- [ ] Số tham số với `configs/mamba.yaml` lệch < 10% so với Transformer; báo lại `n_layer` đã chỉnh
-- [ ] Overfit 1 batch (loss < 0.1) — dán log
-- [ ] Ghi chú: thời gian 1 bước train seq_len 256 trên T4
-- [ ] Thử `pip install mamba-ssm causal-conv1d` trên Kaggle (tối đa 2 giờ); thành công → `mamba_ssm_wrap.py` + so khớp output; thất bại → dán log lỗi vào issue
+### #4 [MB] Môi trường mamba-ssm + MambaLM
+**Nhánh:** `mb/env`, `mb/mamba-lm` · **Mốc: N4 (23/11) wheel trên Kaggle Dataset hoặc chốt backend torch**
+Đặc tả trong docstring `models/mamba_lm.py`.
+- [ ] Ghi môi trường Kaggle (`nvidia-smi`, torch/CUDA/Python) vào `install_notes.txt`
+- [ ] Cài mamba-ssm theo thứ tự ưu tiên (pip -> wheel Releases -> cài lại torch khớp); smoke test so với `selective_scan_ref`
+- [ ] `*.whl` + `install_notes.txt` lên Kaggle Dataset `mamba-btl-wheels`; notebook setup cài lại được trong vài giây
+- [ ] `models/mamba_lm.py`: 8 block (RMSNorm + Mamba mixer, residual, `residual_in_fp32`), cờ `backend: cuda | torch`
+- [ ] Cân tham số với TF (≈ 8M, lệch ≤ 5%); `pytest tests/test_models.py` pass
+- [ ] 500 bước fp16 và fp32 trên dữ liệu thật -> biểu đồ 2 đường loss
+- [ ] Ghi `mamba-ssm` (và `mamba.py` nếu dùng) vào `docs/references.md`
 
-### #5 [Eval] Bộ đánh giá + benchmark + Selective Copying
-**Assignee:** Cao Thanh Hằng · **Deadline PR:** CN 23/11 (evaluate), T4 26/11 (benchmark)
-Cài đặt `src/evaluate.py` và `src/benchmark.py` theo docstring. Dùng checkpoint smoke test để phát triển trước khi có model thật.
-**Hoàn thành khi:**
-- [ ] `evaluate.py` ra BPC test + Top-1/Top-3@k0,1,2 + KSR trên checkpoint bất kỳ
-- [ ] `benchmark.py` chạy với model `dummy`, xuất CSV đúng cột; xử lý OOM
-- [ ] `generate_selective_copying()` + 3 mẫu in ra kiểm tra bằng mắt
-- [ ] Hàm vẽ biểu đồ thời gian/bộ nhớ theo seq_len (matplotlib, log-scale trục x)
-- [ ] `notebooks/make_figures.ipynb` đọc `results/*/summary.json` + `metrics.csv`, vẽ biểu đồ cho slide; chạy được với kết quả smoke test
+### #5 [ĐG] train.py + checkpoint/resume + bench.py + đặc tả đánh giá
+**Nhánh:** `dg/train`, `dg/bench` · **Mốc: N3 (22/11) train.py chạy được trên sample.bin**
+Khung `train.py` đã có (config, vòng lặp, AdamW + cosine/warmup, fp16 + GradScaler, BPC, batch theo ký tự, log CSV). ĐG nhận sở hữu và hoàn thiện các TODO trong docstring `train.py`:
+- [ ] Checkpoint dict đủ khóa (model, optimizer, scheduler, scaler, step, rng_state, config), ghi file tạm rồi đổi tên, mỗi 15–20 phút
+- [ ] Tự tìm `ckpt_latest.pt` (cả trong `/kaggle/input`) và resume
+- [ ] `torch.isfinite(loss)`: NaN -> bỏ bước, ghi log; lặp nhiều lần -> dừng
+- [ ] Test resume (N5): 300 bước, ngắt ~150, resume -> đường loss liền mạch (dán biểu đồ)
+- [ ] `bench.py` theo docstring (trung vị, OOM -> "OOM", ghi tên GPU)
+- [ ] `docs/eval_spec.md` (1 trang): BPC, Top-1/Top-3 cho (a)/(b), KSR, cách đo độ trễ, quy ước chữ hoa
 
-### #6 [Lead] Điều phối + dàn ý slide
-**Assignee:** Lê Thị Ngọc Hà
-- [ ] Chốt scope sau kickoff (scope.md v1.0)
-- [ ] Review mọi PR trong 24h
-- [ ] `docs/slides_outline.md` v1.0, phân người viết từng phần
-- [ ] T2 24/11: ghép pipeline, chạy 200 bước mỗi model
-- [ ] T3–T4: sanity test + train ngắn (~1h GPU/model) + benchmark lần đầu; tổng kết tuần 1
+### #6 [TN] Hạ tầng, review, tích hợp
+- [x] Cấu trúc repo theo mục 3.1, `README.txt`, `base.yaml`, `notebooks/00_setup.ipynb`, `models/base.py`, `tests/test_models.py`
+- [ ] Bật bảo vệ nhánh `main` (bắt buộc PR); mời 4 thành viên
+- [ ] Kaggle Datasets `mamba-btl-data`, `mamba-btl-wheels` (private, 4 thành viên quyền Editor)
+- [ ] 2 Google Sheet: bảng lượt chạy, nhật ký đóng góp
+- [ ] Review PR trong 24h, ưu tiên: loader (DL) -> train.py (ĐG) -> 2 model
+- [ ] Check-in N4: chốt backend Mamba, ghi vào `docs/decisions.md` và README
+- [ ] Nhờ 2 thành viên chạy `00_setup.ipynb` trên tài khoản của họ
+- [ ] N6: chạy `train.py` cả 2 model trên dữ liệu thật, L = 256, ~300 bước; giao lỗi ghép nối
+- [ ] N7: checklist tuần 1, phân lượt chạy tuần 2

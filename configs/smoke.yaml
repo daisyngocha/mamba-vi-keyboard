@@ -1,18 +1,19 @@
-# Chạy thử pipeline trong < 1 phút, CPU cũng chạy được.
+# Chạy thử pipeline < 1 phút, CPU cũng chạy được. Không dùng cho thí nghiệm.
 base: base.yaml
 run_name: smoke
 data:
   source: synthetic
   seq_len: 64
-  batch_size: 16
-  num_workers: 0
 model:
   name: dummy
   d_model: 64
 train:
-  max_steps: 60
-  warmup_steps: 10
-  log_every: 10
+  batch_chars: 1024       # B = 16
+  train_chars: 61_440     # 60 bước
+  precision: fp32
   eval_every: 30
   eval_batches: 5
-  save_every: 60
+  log_every: 10
+paths:
+  checkpoint_dir: checkpoints
+  log_dir: logs/_smoke      # không commit (.gitignore)

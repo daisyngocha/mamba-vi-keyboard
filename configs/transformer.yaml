@@ -1,12 +1,11 @@
+# Owner: TF. Chỉ ghi đè phần khác base.yaml.
 base: base.yaml
-data:
-  source: wiki_vi
 model:
   name: transformer
-  d_model: 256
+  d_model: 384
   n_layer: 4
-  n_head: 4
-  ffn_mult: 4
-  max_seq_len: 4096       # đủ cho benchmark độ dài chuỗi E3
-train:
-  lr: 1.0e-3              # [CHỐT D4] quét {3e-4, 1e-3}
+  n_head: 6               # head_dim = 64
+  mlp_ratio: 4
+  pos_encoding: rope      # RoPE, không dùng learned positional embedding (cần cho thí nghiệm ngoại suy độ dài)
+  rope_base: 10000
+  attn_backend: efficient # ép SDPBackend.EFFICIENT_ATTENTION khi L lớn để không rơi về backend math O(L²)
