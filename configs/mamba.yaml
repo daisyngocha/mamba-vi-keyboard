@@ -1,13 +1,11 @@
+# Owner: MB. Chỉ ghi đè phần khác base.yaml.
 base: base.yaml
-data:
-  source: wiki_vi
 model:
-  name: mamba_pt          # mamba_pt (tự cài đặt) | mamba_ssm (package CUDA)
-  d_model: 256
-  n_layer: 8              # ~2 Mamba block / 1 Transformer layer; chỉnh sau khi đếm tham số
+  name: mamba
+  backend: cuda           # cuda = mamba-ssm (kernel CUDA) | torch = mamba.py thuần PyTorch (dự phòng, chốt ở N4)
+  d_model: 384
+  n_layer: 8              # 2 block Mamba ≈ 1 layer Transformer (cân tham số theo bài báo)
   d_state: 16
   d_conv: 4
   expand: 2
-  dt_rank: auto           # ceil(d_model / 16)
-train:
-  lr: 1.0e-3
+  residual_in_fp32: true
