@@ -16,7 +16,8 @@ fp16 autocast + GradScaler, clip gradient, batch tính theo ký tự, đánh gi�
 TODO(ĐG) — Hướng dẫn Tuần 1 mục 8:
   [ ] save_checkpoint: dict đủ khóa model, optimizer, scheduler, scaler, step, rng_state, config;
       ghi ra file tạm rồi os.replace để không hỏng file khi Kaggle ngắt giữa lúc ghi.
-  [ ] find_resume_checkpoint: tìm ckpt_latest.pt của run_name trong checkpoint_dir VÀ trong /kaggle/input/*
+  [ ] find_resume_checkpoint: tìm ckpt_latest.pt của run_name trong checkpoint_dir VÀ dưới /kaggle/input (đường dẫn có thể
+      lồng nhiều cấp, vd /kaggle/input/notebooks/<owner>/<notebook>/checkpoints/...; tìm bằng glob)
       (output lần chạy trước được Add Input); khôi phục toàn bộ trạng thái rồi chạy tiếp từ step đã lưu.
   [ ] An toàn số: kiểm tra torch.isfinite(loss) mỗi bước; NaN -> bỏ bước, ghi log; lặp nhiều lần -> dừng.
   [ ] Test resume (N5): chạy 300 bước, ngắt ~bước 150, resume -> đường loss liền mạch, gần trùng lượt không ngắt.
@@ -56,7 +57,7 @@ def save_checkpoint(path: Path, state: dict) -> None:
 
 
 def find_resume_checkpoint(run_name: str, checkpoint_dir: Path) -> Path | None:
-    # TODO(ĐG): tìm <checkpoint_dir>/<run_name>/ckpt_latest.pt và /kaggle/input/*/checkpoints/<run_name>/ckpt_latest.pt
+    # TODO(ĐG): tìm <checkpoint_dir>/<run_name>/ckpt_latest.pt và /kaggle/input/**/checkpoints/<run_name>/ckpt_latest.pt
     return None
 
 

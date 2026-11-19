@@ -42,7 +42,8 @@ CÀI ĐẶT VÀ CHẠY (máy cá nhân)
 CHẠY TRÊN KAGGLE
   Mở notebooks/00_setup.ipynb trên Kaggle: GPU T4, Internet On, Add Input 2 Dataset
   mamba-btl-data (DL) và mamba-btl-wheels (MB). Notebook xoá bản clone cũ, clone repo, cài wheel,
-  chạy smoke test. Dữ liệu đọc thẳng từ /kaggle/input/mamba-btl-data.
+  chạy smoke test. Dữ liệu đọc thẳng từ Kaggle Dataset (code tự dò
+  /kaggle/input/mamba-btl-data hoặc /kaggle/input/datasets/<owner>/mamba-btl-data).
   Checkpoint và log ghi vào /kaggle/working/{checkpoints,logs}; lượt dài dùng Save Version -> Save & Run All.
   Log CSV cuối của mỗi lượt chép vào logs/ trong repo qua PR.
 

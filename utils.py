@@ -66,6 +66,19 @@ def set_seed(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
+KAGGLE_INPUT = Path("/kaggle/input")
+
+
+def kaggle_input(slug: str) -> Path | None:
+    """Tìm thư mục Kaggle Dataset theo slug. Kaggle có thể gắn ở /kaggle/input/<slug> (kiểu cũ) hoặc
+    /kaggle/input/datasets/<owner>/<slug> (kiểu mới); output notebook Add Input cũng nằm dưới /kaggle/input."""
+    for pattern in (slug, f"*/{slug}", f"*/*/{slug}"):
+        hits = sorted(p for p in KAGGLE_INPUT.glob(pattern) if p.is_dir())
+        if hits:
+            return hits[0]
+    return None
+
+
 def get_device() -> torch.device:
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

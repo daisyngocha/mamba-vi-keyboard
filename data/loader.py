@@ -2,7 +2,7 @@
 
 Hợp đồng — Hướng dẫn Tuần 1, mục 3.2 (mọi người code theo đúng giao diện này):
 
-    data_dir/  (Kaggle Dataset `mamba-btl-data`, đọc trực tiếp từ /kaggle/input/mamba-btl-data)
+    data_dir/  (Kaggle Dataset `mamba-btl-data`, đọc trực tiếp từ /kaggle/input/…/mamba-btl-data — utils.kaggle_input)
         train.bin  val.bin  test.bin   mảng uint16 (vocab ≈ 200–300 ký tự > 255 nên không dùng uint8),
                                        các bài nối nhau, mỗi bài mở đầu bằng id 1 = <doc>
         sample.bin                     ≈ 1M ký tự lấy từ train, để thử code sớm (N2)
@@ -31,9 +31,11 @@ from pathlib import Path
 
 import torch
 
+from utils import kaggle_input
+
 UNK, DOC = "<unk>", "<doc>"
 UNK_ID, DOC_ID = 0, 1
-KAGGLE_DATA_DIR = Path("/kaggle/input/mamba-btl-data")
+KAGGLE_DATASET = "mamba-btl-data"
 LOCAL_DATA_DIR = Path("data/processed")
 
 
@@ -68,7 +70,7 @@ class CharVocab:
 def resolve_data_dir(data_dir: str | None) -> Path:
     if data_dir:
         return Path(data_dir)
-    return KAGGLE_DATA_DIR if KAGGLE_DATA_DIR.exists() else LOCAL_DATA_DIR
+    return kaggle_input(KAGGLE_DATASET) or LOCAL_DATA_DIR
 
 
 class WikiCharData:
