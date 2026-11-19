@@ -8,6 +8,7 @@ Nhóm:
 - Nguyễn Tiến Dũng
 - Ngô Thị Thu Hằng
 - Cao Thanh Hằng
+
 Phạm vi chi tiết: [`docs/scope.md`](docs/scope.md).
 
 ## Cấu trúc
@@ -42,6 +43,7 @@ python -m src.train --config configs/transformer.yaml --set train.lr=3e-4 --set 
    !bash scripts/smoke_test.sh
    ```
 3. Kết quả nằm ở `results/<run>/`; tải `summary.json` + `metrics.csv` về, **không** commit checkpoint.
+
 > Môi trường đã xác minh (19/11/2026): Kaggle **Tesla T4**, smoke test OK — chi tiết ở issue #6.
 
 ## Interface chung (bắt buộc)
