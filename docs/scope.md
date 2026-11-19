@@ -1,13 +1,13 @@
 # Scope — BTL "Nền tảng GenAI": Mamba vs Transformer cho gợi ý từ bàn phím tiếng Việt
 
-Phiên bản: v0.1 (draft, 19/11/2026) · Owner: Lê Thị Ngọc Hà (trưởng nhóm)
-Ký hiệu: **[CHỐT]** = cần nhóm biểu quyết ở buổi kickoff 19/11.
+Phiên bản: **v1.0** (chốt 19/11/2026) · Owner: Lê Thị Ngọc Hà (trưởng nhóm)
+Các quyết định D1–D7 đã chốt ngày 19/11/2026 — xem decision log trong `docs/kickoff_agenda.md`. Thay đổi scope sau ngày này phải qua PR và được trưởng nhóm duyệt.
 
 ## 1. Yêu cầu của đề
 - Buổi 1 (đã xong): trình bày lý thuyết paper Mamba (Gu & Dao).
 - **Buổi 2 (BTL này)**: báo cáo kết quả thực nghiệm trên bài toán thực tế — cài đặt Mamba, huấn luyện, đánh giá và so sánh với Transformer về **độ chính xác, tốc độ huấn luyện, bộ nhớ**.
     Dàn ý: `docs/slides_outline.md`.
-- Ngày + thời lượng buổi 2: **[CHỐT]** (26/12/2026, 30 phút + 15 phút Q&A).
+- Ngày + thời lượng buổi 2: **26/12/2026, 30 phút trình bày + 15 phút Q&A** (D1).
 
 ## 2. Bài toán ứng dụng
 **Gợi ý từ cho bàn phím tiếng Việt** bằng language model mức ký tự (char-level), train từ đầu.
@@ -20,11 +20,11 @@ Ký hiệu: **[CHỐT]** = cần nhóm biểu quyết ở buổi kickoff 19/11.
 **Ngoài phạm vi**: bộ gõ Telex/VNI (giả định input đã là ký tự Unicode hoàn chỉnh), sửa lỗi chính tả, cá nhân hoá theo người dùng, triển khai lên điện thoại thật.
 
 ## 3. Dữ liệu
-- Nguồn: Wikipedia tiếng Việt — HF `wikimedia/wikipedia`, config `20231101.vi`. **[CHỐT]** có thêm corpus tin tức (VNTC) để văn phong gần văn gõ hằng ngày hơn không.
+- Nguồn: Wikipedia tiếng Việt — HF `wikimedia/wikipedia`, config `20231101.vi`. Tuần 1 chỉ dùng Wikipedia; cân nhắc bổ sung corpus tin tức (VNTC) ở tuần 2 nếu còn thời gian (D2).
 - Quy mô: tập con ~50–100 MB text sau làm sạch (đủ cho mô hình ~3–5M tham số, train được trên GPU Kaggle trong vài giờ).
 - Tiền xử lý (bắt buộc):
   - Chuẩn hoá Unicode **NFC**.
-  - **[CHỐT]** chuyển về chữ thường (đề xuất: có).
+  - Chuyển về chữ thường (D3).
   - Bỏ markup, bảng, dòng quá ngắn (< 20 ký tự); gộp khoảng trắng.
   - Vocab ký tự: giữ ký tự xuất hiện ≥ 50 lần, còn lại → `<unk>`; dự kiến 100–150 ký tự.
 - Chia tập **theo bài viết** (không theo câu) để tránh rò rỉ: train 90% / val 5% / test 5%, seed cố định = 42.
@@ -45,7 +45,7 @@ Ký hiệu: **[CHỐT]** = cần nhóm biểu quyết ở buổi kickoff 19/11.
   - `mamba_ssm` — package chính thức (CUDA kernel). Dùng cho benchmark tốc độ nếu cài được trên Kaggle. Kiểm tra 2 bản cho output khớp nhau (sai số < 1e-3) khi dùng chung trọng số.
 
 ## 5. Giao thức so sánh (fairness)
-Giống nhau cho cả 2 mô hình: dữ liệu, vocab, seq_len train = 256, batch 64, AdamW (lr 1e-3 cho Mamba / **[CHỐT]** quét lr {3e-4, 1e-3} cho Transformer), weight decay 0.1, warmup 500 bước + cosine, grad clip 1.0, AMP bf16/fp16, **cùng ngân sách số bước** (đề xuất 20k bước). Mỗi cấu hình chạy 3 seed nếu đủ quota GPU (tối thiểu 1 seed).
+Giống nhau cho cả 2 mô hình: dữ liệu, vocab, seq_len train = 256, batch 64, AdamW (lr 1e-3 cho Mamba; quét lr {3e-4, 1e-3} cho Transformer — D4), weight decay 0.1, warmup 500 bước + cosine, grad clip 1.0, AMP bf16/fp16, **cùng ngân sách số bước: 20k bước** (D5). Mỗi cấu hình chạy 3 seed nếu đủ quota GPU (tối thiểu 1 seed).
 
 ## 6. Metric
 1. **Chất lượng mô hình**: val/test loss, bits-per-char (BPC).
@@ -67,12 +67,14 @@ Giống nhau cho cả 2 mô hình: dữ liệu, vocab, seq_len train = 256, batc
 ## 8. Timeline
 | Tuần | Thời gian | Mục tiêu |
 |---|---|---|
-| 1 | 20–26/11 | Repo, dữ liệu, 2 model chạy end-to-end, sanity test, dàn ý slide |
-| 2 | 27/11–03/12 | Train đầy đủ E2, chạy E1, bộ eval hoàn chỉnh |
-| 3 | 04–10/12 | E3 benchmark, demo E4, bản nháp slide đầy đủ |
-| 4 | 11–17/12 | Hoàn thiện slide, tập dượt 2 lần, chuẩn bị Q&A |
+| 1 | 20–26/11 | Repo, dữ liệu, 2 model chạy end-to-end, sanity test |
+| 2 | 27/11–03/12 | Train đầy đủ E2 (1 seed), chạy E1, bộ eval hoàn chỉnh |
+| 3 | 04–10/12 | E3 benchmark, E4 latency + demo, khung slide với biểu đồ giữ chỗ |
+| 4 | 11–17/12 | Chạy thêm seed, ablation (nếu kịp), chốt số liệu cuối, bản nháp slide đầy đủ |
+| 5 | 18–25/12 | Hoàn thiện slide, tập dượt 20/12 và 23/12, chuẩn bị Q&A |
+| — | **26/12** | **Báo cáo buổi 2** |
 
-## 9. Phân công tuần 1 (**[CHỐT]**)
+## 9. Phân công tuần 1 (D6)
 | Người | Phạm vi |
 |---|---|
 | Lê Thị Ngọc Hà (lead) | Scope, repo, config, review PR, dàn ý slide, điều phối |

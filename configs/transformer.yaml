@@ -9,4 +9,4 @@ model:
   ffn_mult: 4
   max_seq_len: 4096       # đủ cho benchmark độ dài chuỗi E3
 train:
-  lr: 1.0e-3              # [CHỐT D4] quét {3e-4, 1e-3}
+  lr: 1.0e-3              # D4: quét {3e-4, 1e-3}

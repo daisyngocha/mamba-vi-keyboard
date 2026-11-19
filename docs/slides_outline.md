@@ -1,7 +1,7 @@
 # Dàn ý slide — Buổi báo cáo 2: Kết quả thực nghiệm Mamba vs Transformer trên bài toán gợi ý từ bàn phím tiếng Việt
 
 Phần lý thuyết Mamba đã trình bày ở buổi 1, nên buổi này chỉ nhắc lại 1 slide và dồn thời lượng cho thực nghiệm.
-Thời lượng: **[CHỐT] 30 phút trình bày + 15 phút Q&A** (giả định, chỉnh theo yêu cầu của thầy) · Template: HUST · Người trình bày: Lê Thị Ngọc Hà
+Ngày báo cáo: **26/12/2026** · Thời lượng: **30 phút trình bày + 15 phút Q&A** · Template: HUST · Người trình bày: Lê Thị Ngọc Hà
 Mục tiêu: ~20 slide chính + 5–6 slide dự phòng (appendix) cho Q&A.
 
 Nguyên tắc cho mọi slide kết quả:
@@ -82,13 +82,14 @@ Nguyên tắc cho mọi slide kết quả:
 - A5 Chi tiết cách tính KSR và Top-k.
 - A6 Chi phí tính toán: tổng giờ GPU đã dùng.
 
-## Mốc thời gian **[CHỐT theo ngày báo cáo]**
+## Mốc thời gian
 | Mốc | Hạn |
 |---|---|
-| Khung slide với biểu đồ giữ chỗ (placeholder) + `make_figures.ipynb` chạy với kết quả smoke test | 06/12 |
-| Số liệu cuối E1–E4, chèn vào slide | 12/12 |
-| Tập dượt lần 1 (bấm giờ, cả nhóm hỏi vặn) | 14/12 |
-| Tập dượt lần 2 + chốt appendix | 16/12 |
+| Khung slide với biểu đồ giữ chỗ (placeholder) + `make_figures.ipynb` chạy với kết quả smoke test | 10/12 |
+| Số liệu cuối E1–E4, chèn vào slide | 17/12 |
+| Tập dượt lần 1 (bấm giờ, cả nhóm hỏi vặn) | 20/12 |
+| Tập dượt lần 2 + chốt appendix | 23/12 |
+| **Báo cáo buổi 2** | **26/12** |
 
 ## Chuẩn bị Q&A (mỗi người soạn câu trả lời ≤ 5 dòng cho câu được giao)
 | Câu hỏi dự kiến | Người soạn |
