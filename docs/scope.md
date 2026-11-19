@@ -1,13 +1,14 @@
 # Scope — BTL "Nền tảng GenAI": Mamba vs Transformer cho gợi ý từ bàn phím tiếng Việt
 
 Phiên bản: **v1.0** (chốt 19/11/2026) · Owner: Lê Thị Ngọc Hà (trưởng nhóm)
+Ký hiệu: 🔄 = nội dung thay đổi so với bản nháp v0.1 (chi tiết ở mục 12).
 Các quyết định D1–D7 đã chốt ngày 19/11/2026 — xem decision log trong `docs/kickoff_agenda.md`. Thay đổi scope sau ngày này phải qua PR và được trưởng nhóm duyệt.
 
 ## 1. Yêu cầu của đề
-- Buổi 1 (đã xong): trình bày lý thuyết paper Mamba (Gu & Dao).
-- **Buổi 2 (BTL này)**: báo cáo kết quả thực nghiệm trên bài toán thực tế — cài đặt Mamba, huấn luyện, đánh giá và so sánh với Transformer về **độ chính xác, tốc độ huấn luyện, bộ nhớ**.
+- 🔄 Buổi 1 (đã xong): trình bày lý thuyết paper Mamba (Gu & Dao).
+- 🔄 **Buổi 2 (BTL này)**: báo cáo kết quả thực nghiệm trên bài toán thực tế — cài đặt Mamba, huấn luyện, đánh giá và so sánh với Transformer về **độ chính xác, tốc độ huấn luyện, bộ nhớ**.
     Dàn ý: `docs/slides_outline.md`.
-- Ngày + thời lượng buổi 2: **26/12/2026, 30 phút trình bày + 15 phút Q&A** (D1).
+- 🔄 Ngày + thời lượng buổi 2: **26/12/2026, 30 phút trình bày + 15 phút Q&A** (D1).
 
 ## 2. Bài toán ứng dụng
 **Gợi ý từ cho bàn phím tiếng Việt** bằng language model mức ký tự (char-level), train từ đầu.
@@ -20,11 +21,11 @@ Các quyết định D1–D7 đã chốt ngày 19/11/2026 — xem decision log t
 **Ngoài phạm vi**: bộ gõ Telex/VNI (giả định input đã là ký tự Unicode hoàn chỉnh), sửa lỗi chính tả, cá nhân hoá theo người dùng, triển khai lên điện thoại thật.
 
 ## 3. Dữ liệu
-- Nguồn: Wikipedia tiếng Việt — HF `wikimedia/wikipedia`, config `20231101.vi`. Tuần 1 chỉ dùng Wikipedia; cân nhắc bổ sung corpus tin tức (VNTC) ở tuần 2 nếu còn thời gian (D2).
+- Nguồn: Wikipedia tiếng Việt — HF `wikimedia/wikipedia`, config `20231101.vi`. 🔄 Tuần 1 chỉ dùng Wikipedia; cân nhắc bổ sung corpus tin tức (VNTC) ở tuần 2 nếu còn thời gian (D2).
 - Quy mô: tập con ~50–100 MB text sau làm sạch (đủ cho mô hình ~3–5M tham số, train được trên GPU Kaggle trong vài giờ).
 - Tiền xử lý (bắt buộc):
   - Chuẩn hoá Unicode **NFC**.
-  - Chuyển về chữ thường (D3).
+  - 🔄 Chuyển về chữ thường (D3).
   - Bỏ markup, bảng, dòng quá ngắn (< 20 ký tự); gộp khoảng trắng.
   - Vocab ký tự: giữ ký tự xuất hiện ≥ 50 lần, còn lại → `<unk>`; dự kiến 100–150 ký tự.
 - Chia tập **theo bài viết** (không theo câu) để tránh rò rỉ: train 90% / val 5% / test 5%, seed cố định = 42.
@@ -45,7 +46,7 @@ Các quyết định D1–D7 đã chốt ngày 19/11/2026 — xem decision log t
   - `mamba_ssm` — package chính thức (CUDA kernel). Dùng cho benchmark tốc độ nếu cài được trên Kaggle. Kiểm tra 2 bản cho output khớp nhau (sai số < 1e-3) khi dùng chung trọng số.
 
 ## 5. Giao thức so sánh (fairness)
-Giống nhau cho cả 2 mô hình: dữ liệu, vocab, seq_len train = 256, batch 64, AdamW (lr 1e-3 cho Mamba; quét lr {3e-4, 1e-3} cho Transformer — D4), weight decay 0.1, warmup 500 bước + cosine, grad clip 1.0, AMP bf16/fp16, **cùng ngân sách số bước: 20k bước** (D5). Mỗi cấu hình chạy 3 seed nếu đủ quota GPU (tối thiểu 1 seed).
+Giống nhau cho cả 2 mô hình: dữ liệu, vocab, seq_len train = 256, batch 64, AdamW (🔄 lr 1e-3 cho Mamba; quét lr {3e-4, 1e-3} cho Transformer — D4), weight decay 0.1, warmup 500 bước + cosine, grad clip 1.0, AMP bf16/fp16, 🔄 **cùng ngân sách số bước: 20k bước** (D5). Mỗi cấu hình chạy 3 seed nếu đủ quota GPU (tối thiểu 1 seed).
 
 ## 6. Metric
 1. **Chất lượng mô hình**: val/test loss, bits-per-char (BPC).
@@ -70,18 +71,18 @@ Giống nhau cho cả 2 mô hình: dữ liệu, vocab, seq_len train = 256, batc
 | 1 | 20–26/11 | Repo, dữ liệu, 2 model chạy end-to-end, sanity test, dàn ý slide |
 | 2 | 27/11–03/12 | Train đầy đủ E2, chạy E1, bộ eval hoàn chỉnh |
 | 3 | 04–10/12 | E3 benchmark, demo E4, bản nháp slide đầy đủ |
-| 4 | 11–17/12 | Hoàn thiện slide, tập dượt 2 lần, chuẩn bị Q&A — **hoàn thành toàn bộ trước 17/12** |
-| — | 18–25/12 | Dự phòng (không lên kế hoạch việc mới) |
-| — | **26/12** | **Báo cáo buổi 2** |
+| 4 | 11–17/12 | Hoàn thiện slide, tập dượt 2 lần, chuẩn bị Q&A — 🔄 **hoàn thành toàn bộ trước 17/12** |
+| — | 18–25/12 | 🔄 Dự phòng (không lên kế hoạch việc mới) |
+| — | **26/12** | 🔄 **Báo cáo buổi 2** |
 
-## 9. Phân công tuần 1 (D6)
+## 9. Phân công tuần 1 (D6) — 🔄 kèm số issue trên GitHub
 | Người | Phạm vi |
 |---|---|
-| Lê Thị Ngọc Hà (lead) | Scope, repo, config, review PR, dàn ý slide, điều phối |
-| Nguyễn Tiến Dũng | `src/models/mamba_pt.py`, thử `mamba_ssm` |
-| Đặng Duyên Hà | `src/models/transformer.py`, hoàn thiện `src/train.py` |
-| Ngô Thị Thu Hằng | `data/prepare_data.py`, `src/dataset.py`, tập eval gợi ý từ |
-| Cao Thanh Hằng | `src/evaluate.py`, `src/benchmark.py`, dữ liệu Selective Copying |
+| Lê Thị Ngọc Hà (lead) (#6) | Scope, repo, config, review PR, 🔄 dàn ý slide buổi 2 (thực nghiệm), điều phối |
+| Nguyễn Tiến Dũng (#4) | `src/models/mamba_pt.py`, thử `mamba_ssm` |
+| Đặng Duyên Hà (#3) | `src/models/transformer.py`, hoàn thiện `src/train.py` (🔄 bỏ CUDA warmup khi tính tokens/s) |
+| Ngô Thị Thu Hằng (#2) | `data/prepare_data.py`, `src/dataset.py`, tập eval gợi ý từ, 🔄 upload `data/processed/` lên Kaggle Dataset |
+| Cao Thanh Hằng (#5) | `src/evaluate.py`, `src/benchmark.py`, dữ liệu Selective Copying, 🔄 `notebooks/make_figures.ipynb` |
 
 ## 10. Quy ước làm việc
 - Git: mỗi người làm trên nhánh `feat/<tên-task>`, merge vào `main` qua PR, lead review trong 24h. Không commit dữ liệu thô/checkpoint (đã có `.gitignore`).
@@ -89,6 +90,8 @@ Giống nhau cho cả 2 mô hình: dữ liệu, vocab, seq_len train = 256, batc
 - Daily update (nhóm chat, trước 22h): *Hôm nay làm gì · Bị chặn ở đâu · Mai làm gì*.
 - Sync: Thứ 2 & Thứ 4 hằng tuần, 21:00, 30–45 phút.
 - Quota GPU Kaggle (~30h/tuần/tài khoản): run dài > 1h phải báo trước trong nhóm.
+- 🔄 Môi trường đã xác minh 19/11: Kaggle Tesla T4, smoke test OK. Notebook Kaggle dùng cell trong README (xoá clone cũ trước khi clone lại).
+- 🔄 `main` được bảo vệ bằng ruleset `require_PR_before_merge_main`: mọi thay đổi phải qua PR.
 
 ## 11. Rủi ro
 | Rủi ro | Phương án |
@@ -97,3 +100,14 @@ Giống nhau cho cả 2 mô hình: dữ liệu, vocab, seq_len train = 256, batc
 | Thiếu GPU | Giảm dữ liệu/bước train; phân quota theo người |
 | Thành viên bận môn khác | Mỗi task 1 owner + deadline; CN chưa có PR → lead chia lại ở sync Thứ 2 |
 | Transformer thắng về BPC ở seq_len ngắn | Đây vẫn là kết quả hợp lệ; nhấn mạnh E3 + phân tích trade-off |
+
+## 12. Lịch sử thay đổi
+| Phiên bản | Ngày | Thay đổi |
+|---|---|---|
+| v0.1 | 19/11/2026 | Bản nháp đầu |
+| v1.0 | 19/11/2026 | 🔄 Mục 1: tách buổi 1 (lý thuyết, đã xong) và buổi 2 (chỉ thực nghiệm); chốt ngày 26/12, 30' + 15' Q&A (D1) |
+| | | 🔄 Mục 3: chỉ dùng Wikipedia ở tuần 1 (D2); chuyển chữ thường (D3) |
+| | | 🔄 Mục 5: quét lr {3e-4, 1e-3} cho Transformer (D4); ngân sách 20k bước (D5) |
+| | | 🔄 Mục 8: giữ 4 tuần, hoàn thành trước 17/12; 18–25/12 dự phòng; báo cáo 26/12 |
+| | | 🔄 Mục 9: giữ nguyên người phụ trách (D6), thêm số issue GitHub #2–#6 và việc bổ sung: warmup (#3), Kaggle Dataset (#2), `make_figures.ipynb` (#5), dàn ý buổi 2 (#6) |
+| | | 🔄 Mục 10: ghi nhận môi trường Kaggle T4 đã xác minh; ruleset bảo vệ `main` |
