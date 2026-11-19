@@ -20,3 +20,16 @@ def test_vocab_keeps_case_and_nfc():
     assert v.stoi["<unk>"] == UNK_ID and v.stoi["<doc>"] == DOC_ID
     assert v.decode(v.encode("Aa")) == "Aa"
     assert v.encode("ắ") == [4]  # NFD "ắ" -> NFC
+
+
+def test_kaggle_input_layouts(tmp_path, monkeypatch):
+    """Kaggle gắn dataset ở /kaggle/input/<slug> hoặc /kaggle/input/datasets/<owner>/<slug>."""
+    import utils
+    monkeypatch.setattr(utils, "KAGGLE_INPUT", tmp_path)
+    assert utils.kaggle_input("mamba-btl-data") is None
+    new = tmp_path / "datasets" / "ngochadaisy" / "mamba-btl-data"
+    new.mkdir(parents=True)
+    assert utils.kaggle_input("mamba-btl-data") == new
+    old = tmp_path / "mamba-btl-data"
+    old.mkdir()
+    assert utils.kaggle_input("mamba-btl-data") == old  # kiểu cũ được ưu tiên

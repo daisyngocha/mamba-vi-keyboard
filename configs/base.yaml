@@ -8,7 +8,7 @@ seed: 0                   # 3 seed {0,1,2} tại L = 1024; các L khác 1 seed (
 data:
   source: wiki_vi         # wiki_vi | synthetic (chỉ cho smoke test)
   # Thư mục chứa train/val/test.bin, vocab.json, meta.json, sample.bin.
-  # null -> tự dò: /kaggle/input/mamba-btl-data (Kaggle) rồi data/processed (máy cá nhân).
+  # null -> tự dò: /kaggle/input/…/mamba-btl-data (Kaggle, cả kiểu datasets/<owner>/) rồi data/processed.
   data_dir: null
   train_file: train.bin   # đổi sang sample.bin để thử code khi chưa có bộ đầy đủ
   seq_len: 256            # biến chính L ∈ {256, 1024, 4096}
