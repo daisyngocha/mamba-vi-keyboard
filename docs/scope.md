@@ -4,10 +4,10 @@ Phiên bản: v0.1 (draft, 19/11/2026) · Owner: Lê Thị Ngọc Hà (trưởng
 Ký hiệu: **[CHỐT]** = cần nhóm biểu quyết ở buổi kickoff 19/11.
 
 ## 1. Yêu cầu của đề
-- Trình bày paper *Mamba: Linear-Time Sequence Modeling with Selective State Spaces* (Gu & Dao): 60 phút + 20 phút Q&A.
-- Cài đặt Mamba, huấn luyện trên bài toán xử lý chuỗi, đánh giá và so sánh với Transformer về **độ chính xác, tốc độ huấn luyện, bộ nhớ**.
-- Giải một bài toán ứng dụng cụ thể.
-- Hạn nộp/thuyết trình: **[CHỐT] ngày chính xác** (giả định ~17/12/2026).
+- Buổi 1 (đã xong): trình bày lý thuyết paper Mamba (Gu & Dao).
+- **Buổi 2 (BTL này)**: báo cáo kết quả thực nghiệm trên bài toán thực tế — cài đặt Mamba, huấn luyện, đánh giá và so sánh với Transformer về **độ chính xác, tốc độ huấn luyện, bộ nhớ**.
+    Dàn ý: `docs/slides_outline.md`.
+- Ngày + thời lượng buổi 2: **[CHỐT]** (26/12/2026, 30 phút + 15 phút Q&A).
 
 ## 2. Bài toán ứng dụng
 **Gợi ý từ cho bàn phím tiếng Việt** bằng language model mức ký tự (char-level), train từ đầu.
