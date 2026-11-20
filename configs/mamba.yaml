@@ -3,7 +3,7 @@ base: base.yaml
 model:
   name: mamba
   backend: cuda           # cuda = mamba-ssm (kernel CUDA) | torch = mamba.py thuần PyTorch (dự phòng, chốt ở N4)
-  d_model: 384
+  d_model: 368           # 7,20M tham số, lệch TransformerLM (384) +0,18% — kiểm tra bởi tests/test_models.py
   n_layer: 8              # 2 block Mamba ≈ 1 layer Transformer (cân tham số theo bài báo)
   d_state: 16
   d_conv: 4

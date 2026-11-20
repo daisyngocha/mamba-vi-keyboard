@@ -15,7 +15,7 @@ data:
 
 model:
   name: dummy             # mamba | transformer | dummy (smoke test)
-  d_model: 384            # [đề xuất] ≈ 8M tham số; MB và TF chỉnh để lệch nhau ≤ 5%
+  d_model: 384            # mỗi model ghi đè: Transformer 384, Mamba 368 -> cùng ≈ 7,2M tham số (lệch 0,18%)
   n_layer: 4
   tie_embeddings: true    # dùng chung cho cả 2 model: embedding -> lõi -> RMSNorm -> lm_head
 
