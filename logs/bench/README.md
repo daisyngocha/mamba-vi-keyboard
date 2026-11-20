@@ -20,7 +20,7 @@ Tỷ lệ Mamba / Transformer ổn định giữa 3 lần chạy (0,47–0,50 ·
 | 8.192 | 4 | 58.644 | 83.543 | 1,42 | 2.736 / 2.662 | 149 / 94 |
 | 16.384 | 2 | 34.415 | 84.228 | 2,45 | 2.746 / 2.662 | 227 / 94 |
 
-Tỷ lệ Mamba / Transformer từng lần: L = 8.192: 1,52 · 1,42 · 1,36; L = 16.384: 2,54 · 2,45 · 2,27. Số của 0756 và 0757 chép từ output notebook; CSV gốc bổ sung khi có.
+Tỷ lệ Mamba / Transformer từng lần: L = 8.192: 1,52 · 1,42 · 1,36; L = 16.384: 2,54 · 2,45 · 2,27.
 
 **Theo B, L = 4.096** (`--seq_lens 4096 --batch_sizes 1 2 4 8`, 2 lần chạy: 0738, 0741)
 
