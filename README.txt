@@ -26,9 +26,9 @@ CẤU TRÚC
   evaluate/    suggest.py · ksr.py · latency.py (ĐG, tuần 2–3)
   demo/        app.py (ĐG, tuần 3)
   tests/       test cho phần của từng người
-  notebooks/   00_setup.ipynb (TN) · figures.ipynb (tuần 3)
+  notebooks/   00_setup.ipynb (TN) · train_run.ipynb (1 lượt huấn luyện, Save & Run All) · figures.ipynb (tuần 3)
   logs/        CSV log cuối của từng lượt chạy
-  docs/        tài liệu nhóm · decisions.md · references.md · github_issues_week1.md · slides_outline.md
+  docs/        tài liệu nhóm · decisions.md · eval_spec.md · meeting_N7.md · references.md · github_issues_week1.md · slides_outline.md
   utils.py     config, seed, lịch lr, đo thời gian/bộ nhớ, log CSV
   Không đưa lên repo: dữ liệu, checkpoints/, *.pt, *.bin, *.whl
 
