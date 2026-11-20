@@ -41,7 +41,8 @@ CÀI ĐẶT VÀ CHẠY (máy cá nhân)
   python train.py --config configs/transformer.yaml --set data.train_file=sample.bin
 
 CHẠY TRÊN KAGGLE
-  Mở notebooks/00_setup.ipynb trên Kaggle: GPU T4, Internet On, Add Input 2 Dataset
+  Import notebooks/00_setup.ipynb vào Kaggle (File -> Import Notebook -> GitHub): GPU T4, Internet On,
+  Environment = Pin to original environment (2026-11-19), Add Input 2 Dataset
   mamba-btl-data (DL) và mamba-btl-wheels (MB). Notebook xoá bản clone cũ, clone repo, cài wheel,
   chạy smoke test. Dữ liệu đọc thẳng từ Kaggle Dataset (code tự dò
   /kaggle/input/mamba-btl-data hoặc /kaggle/input/datasets/<owner>/mamba-btl-data).
@@ -58,5 +59,7 @@ QUY ƯỚC CHUNG (Hướng dẫn Tuần 1 mục 3)
   Log CSV    logs/<run_name>.csv: step, train_loss, val_bpc, lr, tokens_per_sec, peak_mem_mb, gpu_name, time
 
 TRẠNG THÁI
-  Backend Mamba: chưa chốt (check-in N4, 23/11) — xem docs/decisions.md
+  Backend Mamba: cuda (mamba-ssm 2.3.2.post1, wheel ở Dataset mamba-btl-wheels) — chốt 20/11, docs/decisions.md Q7
+  Kaggle: GPU T4, Environment = Pin to original environment (2026-11-19) — bắt buộc để wheel khớp torch 2.11/cu130
+  Dữ liệu: Dataset mamba-btl-data đã có (vocab 275, train 50M ký tự) — 20/11
   Quy trình Git: CONTRIBUTING.md
