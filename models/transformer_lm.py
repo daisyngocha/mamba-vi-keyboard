@@ -9,7 +9,10 @@ Attention: F.scaled_dot_product_attention(q, k, v, is_causal=True), KHÔNG truy�
 cfg.attn_backend == "efficient" ép SDPBackend.EFFICIENT_ATTENTION (bộ nhớ O(L), không rơi về backend math O(L²)).
 Khởi tạo kiểu GPT-2: Linear ~ N(0, 0.02), phép chiếu về residual (attn.proj, mlp.fc2) ~ N(0, 0.02 / sqrt(2·n_layer)).
 
-Tuần 2: step(token, state) với KV cache; tiêu chí đúng: logits khi sinh có cache = logits khi tính lại cả chuỗi.
+Tuần 2 (issue #23): cài `init_state(batch_size, device)` và `core_step(h, state)` theo giao diện ở models/base.py.
+    state = {"pos": số ký tự đã nạp, "kv": [(k, v) mỗi layer, dạng (B, H, pos, head_dim)]}; nối thêm 1 vị trí mỗi bước
+    (không cấp phát trước) để state_nbytes phản ánh đúng bộ nhớ KV cache. RoPE dùng offset = pos.
+    Tiêu chí đúng: tests/test_step.py (logits từ step() = forward trên cả chuỗi).
 Trích dẫn: Su et al. (2021) RoFormer — docs/references.md.
 """
 from __future__ import annotations
