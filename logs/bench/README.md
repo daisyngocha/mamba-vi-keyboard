@@ -13,12 +13,14 @@ Bước huấn luyện đầy đủ (forward + backward + AdamW), token ngẫu n
 
 Tỷ lệ Mamba / Transformer ổn định giữa 3 lần chạy (0,47–0,50 · 0,61–0,67 · 0,92–0,99). Lần chạy đầu (0737) nhanh hơn ~15% ở cả hai model (GPU còn nguội) → so sánh trong cùng một lần chạy, báo trung vị nhiều lần.
 
-**Khám phá: L vượt thiết kế, vẫn 32.768 ký tự/bước** (`--seq_lens 8192 16384`, 1 lần chạy 0749 — cần thêm 2 lần để lấy trung vị)
+**Khám phá: L vượt thiết kế, vẫn 32.768 ký tự/bước** (`--seq_lens 8192 16384`, 3 lần chạy: 0749, 0756, 0757 — trung vị)
 
 | L | B | Transformer ký tự/s | Mamba ký tự/s | Mamba / Transformer | Bộ nhớ đỉnh T / M (MB) | Forward T / M (ms) |
 |---|---|---|---|---|---|---|
-| 8.192 | 4 | 55.735 | 84.724 | 1,52 | 2.736 / 2.662 | 160 / 92 |
-| 16.384 | 2 | 33.714 | 85.516 | 2,54 | 2.746 / 2.662 | 225 / 91 |
+| 8.192 | 4 | 58.644 | 83.543 | 1,42 | 2.736 / 2.662 | 149 / 94 |
+| 16.384 | 2 | 34.415 | 84.228 | 2,45 | 2.746 / 2.662 | 227 / 94 |
+
+Tỷ lệ Mamba / Transformer từng lần: L = 8.192: 1,52 · 1,42 · 1,36; L = 16.384: 2,54 · 2,45 · 2,27. Số của 0756 và 0757 chép từ output notebook; CSV gốc bổ sung khi có.
 
 **Theo B, L = 4.096** (`--seq_lens 4096 --batch_sizes 1 2 4 8`, 2 lần chạy: 0738, 0741)
 
@@ -30,7 +32,7 @@ Tỷ lệ Mamba / Transformer ổn định giữa 3 lần chạy (0,47–0,50 ·
 | 8 | 87.243 · 2.732 | 82.254 · 2.661 |
 
 **Nhận xét sơ bộ (RQ2)**
-- Khi L tăng 256 → 16.384: Transformer chậm dần (138k → 120k → 81k → 56k → 34k ký tự/s, tức ≈ tỉ lệ nghịch với L ở L lớn — chi phí attention O(L²) trên mỗi chuỗi), Mamba tăng rồi đi ngang ≈ 80–85k từ L = 1.024 (chi phí O(L)). Điểm giao ≈ L = 4.096; ở L = 16.384 Mamba nhanh gấp 2,5 lần.
+- Khi L tăng 256 → 16.384: Transformer chậm dần (138k → 120k → 81k → 59k → 34k ký tự/s, tức ≈ tỉ lệ nghịch với L ở L lớn — chi phí attention O(L²) trên mỗi chuỗi), Mamba tăng rồi đi ngang ≈ 80–85k từ L = 1.024 (chi phí O(L)). Điểm giao ≈ L = 4.096; ở L = 8.192 Mamba nhanh gấp 1,4 lần, ở L = 16.384 gấp 2,45 lần.
 - Ở L ≤ 1.024 Transformer nhanh hơn (gấp 2 ở L = 256): trên T4, attention ngắn rẻ hơn selective scan.
 - Bộ nhớ huấn luyện gần như không đổi theo L và bằng nhau giữa 2 model (≈ 2,7 GB): attention memory-efficient chỉ tốn bộ nhớ tuyến tính theo L, và số ký tự mỗi bước cố định. Kể cả ở L = 16.384 bộ nhớ vẫn ≈ 2,7 GB cho cả 2 model: khác biệt O(L²) của attention không thể hiện ở bộ nhớ huấn luyện khi dùng kernel này, chỉ thể hiện ở thời gian.
 - Bộ nhớ tăng tuyến tính theo B (~330 MB mỗi chuỗi 4.096 ký tự), không OOM; còn xa giới hạn 15 GB.
