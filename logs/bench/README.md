@@ -13,7 +13,7 @@ Bước huấn luyện đầy đủ (forward + backward + AdamW), token ngẫu n
 
 Tỷ lệ Mamba / Transformer ổn định giữa 3 lần chạy (0,47–0,50 · 0,61–0,67 · 0,92–0,99). Lần chạy đầu (0737) nhanh hơn ~15% ở cả hai model (GPU còn nguội) → so sánh trong cùng một lần chạy, báo trung vị nhiều lần.
 
-**Khám phá: L vượt thiết kế, vẫn 32.768 ký tự/bước** (`--seq_lens 8192 16384`, 1 lần chạy 0749 — file CSV bổ sung sau)
+**Khám phá: L vượt thiết kế, vẫn 32.768 ký tự/bước** (`--seq_lens 8192 16384`, 1 lần chạy 0749 — cần thêm 2 lần để lấy trung vị)
 
 | L | B | Transformer ký tự/s | Mamba ký tự/s | Mamba / Transformer | Bộ nhớ đỉnh T / M (MB) | Forward T / M (ms) |
 |---|---|---|---|---|---|---|
