@@ -2,7 +2,7 @@
 base: base.yaml
 model:
   name: transformer
-  d_model: 384
+  d_model: 384           # 7,19M tham số (vocab 275)
   n_layer: 4
   n_head: 6               # head_dim = 64
   mlp_ratio: 4
