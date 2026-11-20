@@ -12,7 +12,10 @@ Backend (cfg.backend), cùng tên và cùng kích thước tham số nên state_
 Khởi tạo theo quy ước của mamba-ssm (MambaLMHeadModel._init_weights): bias = 0 (trừ dt_proj.bias), out_proj chia
 sqrt(n_layer); A_log và D không chịu weight decay (_no_weight_decay).
 
-Tuần 2: step(token, state) sinh từng bước với trạng thái kích thước cố định (conv_state, ssm_state).
+Tuần 2 (issue #22): cài `init_state(batch_size, device)` và `core_step(h, state)` theo giao diện ở models/base.py.
+    state = danh sách (conv_state, ssm_state) cho từng block, kích thước cố định (không phụ thuộc số ký tự đã nạp).
+    backend cuda: mixer.allocate_inference_cache(...) và mixer.step(h[:, None], conv_state, ssm_state) của mamba-ssm;
+    backend torch: TorchMambaMixer.step() tương ứng để tests/test_step.py chạy được trên CPU.
 Trích dẫn: state-spaces/mamba (mamba-ssm) — docs/references.md.
 """
 from __future__ import annotations
