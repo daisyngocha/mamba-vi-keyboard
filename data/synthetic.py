@@ -3,14 +3,13 @@ from __future__ import annotations
 
 import torch
 
-from data.loader import DOC, DOC_ID, UNK, CharVocab, normalize
+from data.loader import DOC, DOC_ID, UNK, CharVocab, normalize, window_starts
 
 _TEXT = (
     "Hôm nay trời rất nắng, chúng tôi đi học ở Trường Đại học Bách khoa Hà Nội. "
     "Mô hình Mamba xử lý chuỗi với độ phức tạp tuyến tính theo độ dài. "
     "Transformer dùng cơ chế attention nên chi phí tăng theo bình phương độ dài chuỗi. "
 )
-_SPLIT_SALT = {"train": 0, "val": 1, "test": 2}
 
 
 class SyntheticCharData:
@@ -23,7 +22,6 @@ class SyntheticCharData:
 
     def get_batch(self, split: str, batch_size: int, seq_len: int, step: int, seed: int):
         data = self.splits[split]
-        g = torch.Generator().manual_seed(seed * 1_000_003 + step * 3 + _SPLIT_SALT[split])
-        ix = torch.randint(len(data) - seq_len - 1, (batch_size,), generator=g)
+        ix = window_starts(len(data), batch_size, seq_len, step, seed, split)
         w = torch.stack([data[i : i + seq_len + 1] for i in ix.tolist()])
         return w[:, :-1].contiguous(), w[:, 1:].contiguous()

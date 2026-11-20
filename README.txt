@@ -34,6 +34,7 @@ CẤU TRÚC
 
 CÀI ĐẶT VÀ CHẠY (máy cá nhân)
   pip install -r requirements.txt
+  python -m data.prepare --out data/processed   # tải + xử lý Wikipedia vi (cần Internet)
   bash scripts/smoke_test.sh          # < 1 phút, CPU cũng chạy, in "SMOKE TEST OK"
   python -m pytest -q tests           # giao diện model/dữ liệu
   python train.py --config configs/mamba.yaml --set data.seq_len=1024 --set seed=1
