@@ -1,0 +1,7 @@
+model,backend,seq_len,batch_size,chars_per_step,params,precision,train_step_ms,fwd_ms,chars_per_sec,peak_mem_mb,status,gpu_name,torch,time
+transformer,-,256,128,32768,7186944,fp16,204.49,65.99,160243,2728.0,ok,Tesla T4,2.11.0+cu130,2026-11-20T07:38:00
+transformer,-,1024,32,32768,7186944,fp16,233.84,72.51,140130,2729.1,ok,Tesla T4,2.11.0+cu130,2026-11-20T07:38:04
+transformer,-,4096,8,32768,7186944,fp16,344.16,97.44,95212,2732.1,ok,Tesla T4,2.11.0+cu130,2026-11-20T07:38:10
+mamba,cuda,256,128,32768,7199552,fp16,409.16,86.87,80086,2741.6,ok,Tesla T4,2.11.0+cu130,2026-11-20T07:38:25
+mamba,cuda,1024,32,32768,7199552,fp16,349.1,83.41,93864,2668.7,ok,Tesla T4,2.11.0+cu130,2026-11-20T07:38:31
+mamba,cuda,4096,8,32768,7199552,fp16,373.3,84.85,87779,2661.6,ok,Tesla T4,2.11.0+cu130,2026-11-20T07:38:38
