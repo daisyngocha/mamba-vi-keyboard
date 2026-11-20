@@ -255,7 +255,8 @@ def main():
             scaler.step(opt)
             scaler.update()
 
-        if (step + 1) % tc.log_every == 0:
+        stop_now = args.stop_after is not None and step + 1 >= args.stop_after
+        if (step + 1) % tc.log_every == 0 or stop_now:  # luôn ghi 1 dòng khi dừng sớm (đo bộ nhớ ngắn)
             sync(device)
             now = time.perf_counter()
             tps = chars_per_step * (step + 1 - last_log_step) / (now - t_last)
@@ -275,7 +276,6 @@ def main():
             logger.log(step=step + 1, lr=f"{lr:.3e}", peak_mem_mb="" if math.isnan(pm) else f"{pm:.0f}",
                        gpu_name=gname, time=f"{elapsed_before + time.perf_counter() - t_start:.1f}", **row)
 
-        stop_now = args.stop_after is not None and step + 1 >= args.stop_after
         if time.perf_counter() - t_ckpt > tc.ckpt_every_min * 60 or step + 1 == max_steps or stop_now:
             save_checkpoint(ckpt_path, state(step + 1))
             t_ckpt = time.perf_counter()
