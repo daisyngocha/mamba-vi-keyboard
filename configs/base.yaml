@@ -1,6 +1,6 @@
 # Cấu hình chung (TN). Mọi lượt chạy kế thừa file này; mamba.yaml / transformer.yaml chỉ ghi đè phần khác.
 # Nguồn: docs/Mo_ta_bai_toan_thuc_nghiem_Mamba_v1.docx mục 4.1 và docs/Huong_dan_Tuan1_theo_vai_tro_v1.docx mục 3–4.
-# Giá trị đánh dấu [đề xuất] chốt ở buổi review N7 (26/11).
+# Đã chốt ngày 20/11 (docs/decisions.md Q6, Q8). Đổi giá trị nào phải ghi lại vào decisions.md.
 
 run_name: null            # null -> tự đặt <model>_L<seq_len>_s<seed>, vd mamba_L1024_s0
 seed: 0                   # 3 seed {0,1,2} tại L = 1024; các L khác 1 seed (0)
@@ -21,9 +21,9 @@ model:
 
 train:
   # Batch tính theo KÝ TỰ: batch_size = batch_chars // seq_len, nên mỗi bước thấy cùng số ký tự ở mọi L.
-  batch_chars: 32768      # [đề xuất] L=256 -> B=128 · L=1024 -> B=32 · L=4096 -> B=8
+  batch_chars: 32768      # L=256 -> B=128 · L=1024 -> B=32 · L=4096 -> B=8
   grad_accum: 1           # tăng nếu OOM, giữ nguyên batch_chars hiệu dụng
-  train_chars: 200_000_000  # [đề xuất] tổng ký tự huấn luyện (≈ 4 epoch của 50M), như nhau cho mọi lượt
+  train_chars: 200_000_000  # tổng ký tự huấn luyện (≈ 4 epoch của 50M), như nhau cho mọi lượt
   optimizer: adamw
   lr: 1.0e-3
   betas: [0.9, 0.95]

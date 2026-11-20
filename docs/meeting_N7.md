@@ -11,7 +11,7 @@ Chủ trì: TN (Lê Thị Ngọc Hà). Theo *Hướng dẫn Tuần 1* mục 9. T
 | 1 | Kiểm tra checklist tuần 1, demo chạy được | 10 | TN |
 | 2 | Giải thích chéo pipeline | 15 | Cả nhóm |
 | 3 | Kết quả sơ bộ RQ2 | 5 | TN |
-| 4 | Chốt quyết định kỹ thuật | 10 | TN |
+| 4 | Thông báo quyết định đã chốt (Q6–Q9) | 5 | TN |
 | 5 | Phân lượt chạy tuần 2 | 10 | TN, MB, TF |
 | 6 | Việc tuần 2 theo vai trò | 5 | TN |
 | 7 | Cập nhật nhật ký đóng góp, chốt biên bản | 5 | TN |
@@ -60,12 +60,12 @@ Tesla T4, fp16, 32.768 ký tự/bước, trung vị 3 lần chạy:
 
 | # | Đề xuất | Căn cứ | Chốt |
 |---|---|---|---|
-| Q6 | `base.yaml`: AdamW lr 1e-3, β (0,9; 0,95), wd 0,1, warmup 2% + cosine về 10%, batch 32.768 ký tự, **train_chars 200M (≈ 4 epoch)**, eval mỗi 250 bước, checkpoint mỗi 15 phút | 500 bước ổn định, không NaN; ước tính 0,7–1,2 giờ GPU mỗi lượt | ☐ |
-| Q7 | Backend Mamba `cuda` (mamba-ssm 2.3.2.post1), Environment Kaggle ghim 2026-11-19 | smoke test + test so với bản PyTorch tham chiếu | ☐ |
-| Q8 | **fp16**; d_model Transformer 384 (6 × 64), Mamba 368 → 7,19M / 7,20M tham số (lệch 0,18%); **L tối đa 4.096** | fp16 = fp32 tới 4 chữ số BPC, nhanh gấp 2; L = 4.096 B = 8 chỉ dùng 2,7 GB | ☐ |
-| Q9 | Đặc tả đánh giá `docs/eval_spec.md`: Top-k khớp chính xác cả hoa/thường (+ chỉ số phụ không phân biệt); KSR chạm chọn = 1 phím, không tự thêm khoảng trắng; beam 5, ≤ 10 ký tự | Q2 giữ chữ hoa | ☐ |
+| Q6 | `base.yaml`: AdamW lr 1e-3, β (0,9; 0,95), wd 0,1, warmup 2% + cosine về 10%, batch 32.768 ký tự, **train_chars 200M (≈ 4 epoch)**, eval mỗi 250 bước, checkpoint mỗi 15 phút | 500 bước ổn định, không NaN; ước tính 0,7–1,2 giờ GPU mỗi lượt | ☑ 20/11 |
+| Q7 | Backend Mamba `cuda` (mamba-ssm 2.3.2.post1), Environment Kaggle ghim 2026-11-19 | smoke test + test so với bản PyTorch tham chiếu | ☑ 20/11 |
+| Q8 | **fp16**; d_model Transformer 384 (6 × 64), Mamba 368 → 7,19M / 7,20M tham số (lệch 0,18%); **L tối đa 4.096** | fp16 = fp32 tới 4 chữ số BPC, nhanh gấp 2; L = 4.096 B = 8 chỉ dùng 2,7 GB | ☑ 20/11 |
+| Q9 | Đặc tả đánh giá `docs/eval_spec.md`: Top-k khớp chính xác cả hoa/thường (+ chỉ số phụ không phân biệt); KSR chạm chọn = 1 phím, không tự thêm khoảng trắng; beam 5, ≤ 10 ký tự | Q2 giữ chữ hoa | ☑ 20/11 |
 
-Thay đổi nào được chốt khác đề xuất thì ghi lại vào `docs/decisions.md` ngay sau họp.
+TN đã chốt cả 4 quyết định theo đề xuất ngày 20/11 (ghi trong `docs/decisions.md`). Tại họp chỉ cần thông báo lại; nếu cả nhóm muốn đổi, ghi thay đổi vào `decisions.md`.
 
 ## 5. Lượt chạy tuần 2 (27/11–03/12)
 
@@ -100,7 +100,7 @@ Từ tuần 2 mỗi người tự làm và tự commit trên nhánh `<mã>/<vi�
 ## 7. Biên bản (điền tại họp)
 
 - Có mặt: ☐ Ngọc Hà ☐ Thu Hằng ☐ Tiến Dũng ☐ Duyên Hà ☐ Thanh Hằng
-- Quyết định chốt: Q6 ☐ · Q7 ☐ · Q8 ☐ · Q9 ☐ — thay đổi (nếu có):
+- Quyết định: Q6–Q9 đã chốt 20/11 — thay đổi tại họp (nếu có):
 - Thành viên đã chạy được `00_setup` trên tài khoản riêng:
 - Vướng mắc và người xử lý:
 - Hạn tiếp theo: checkpoint P1 trước 30/11; `step()` của cả 2 model trước 01/12; `suggest` chạy được trước 03/12.
