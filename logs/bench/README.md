@@ -13,6 +13,13 @@ Bước huấn luyện đầy đủ (forward + backward + AdamW), token ngẫu n
 
 Tỷ lệ Mamba / Transformer ổn định giữa 3 lần chạy (0,47–0,50 · 0,61–0,67 · 0,92–0,99). Lần chạy đầu (0737) nhanh hơn ~15% ở cả hai model (GPU còn nguội) → so sánh trong cùng một lần chạy, báo trung vị nhiều lần.
 
+**Khám phá: L vượt thiết kế, vẫn 32.768 ký tự/bước** (`--seq_lens 8192 16384`, 1 lần chạy 0749 — file CSV bổ sung sau)
+
+| L | B | Transformer ký tự/s | Mamba ký tự/s | Mamba / Transformer | Bộ nhớ đỉnh T / M (MB) | Forward T / M (ms) |
+|---|---|---|---|---|---|---|
+| 8.192 | 4 | 55.735 | 84.724 | 1,52 | 2.736 / 2.662 | 160 / 92 |
+| 16.384 | 2 | 33.714 | 85.516 | 2,54 | 2.746 / 2.662 | 225 / 91 |
+
 **Theo B, L = 4.096** (`--seq_lens 4096 --batch_sizes 1 2 4 8`, 2 lần chạy: 0738, 0741)
 
 | B | Transformer ký tự/s · MB | Mamba ký tự/s · MB |
@@ -23,6 +30,7 @@ Tỷ lệ Mamba / Transformer ổn định giữa 3 lần chạy (0,47–0,50 ·
 | 8 | 87.243 · 2.732 | 82.254 · 2.661 |
 
 **Nhận xét sơ bộ (RQ2)**
-- Khi L tăng 256 → 4.096: Transformer chậm đi 42% (138k → 81k ký tự/s), Mamba nhanh lên 22% (66k → 80k). Hai model ngang nhau ở L = 4.096; điểm giao ≈ 4.096.
-- Bộ nhớ huấn luyện gần như không đổi theo L và bằng nhau giữa 2 model (≈ 2,7 GB): attention memory-efficient chỉ tốn bộ nhớ tuyến tính theo L, và số ký tự mỗi bước cố định. Khác biệt bộ nhớ O(L²) của attention sẽ không thấy trên T4 ở L ≤ 4.096 với kernel này.
+- Khi L tăng 256 → 16.384: Transformer chậm dần (138k → 120k → 81k → 56k → 34k ký tự/s, tức ≈ tỉ lệ nghịch với L ở L lớn — chi phí attention O(L²) trên mỗi chuỗi), Mamba tăng rồi đi ngang ≈ 80–85k từ L = 1.024 (chi phí O(L)). Điểm giao ≈ L = 4.096; ở L = 16.384 Mamba nhanh gấp 2,5 lần.
+- Ở L ≤ 1.024 Transformer nhanh hơn (gấp 2 ở L = 256): trên T4, attention ngắn rẻ hơn selective scan.
+- Bộ nhớ huấn luyện gần như không đổi theo L và bằng nhau giữa 2 model (≈ 2,7 GB): attention memory-efficient chỉ tốn bộ nhớ tuyến tính theo L, và số ký tự mỗi bước cố định. Kể cả ở L = 16.384 bộ nhớ vẫn ≈ 2,7 GB cho cả 2 model: khác biệt O(L²) của attention không thể hiện ở bộ nhớ huấn luyện khi dùng kernel này, chỉ thể hiện ở thời gian.
 - Bộ nhớ tăng tuyến tính theo B (~330 MB mỗi chuỗi 4.096 ký tự), không OOM; còn xa giới hạn 15 GB.
