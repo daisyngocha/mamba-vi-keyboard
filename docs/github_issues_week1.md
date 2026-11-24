@@ -7,10 +7,10 @@ Nhánh: `<mã>/<việc>` (vd `dl/prepare`, `mb/mamba-lm`). Mốc in đậm là �
 | Mã | Vai trò | Thành viên |
 |---|---|---|
 | TN | Trưởng nhóm | Lê Thị Ngọc Hà |
-| DL | Dữ liệu | Ngô Thị Thu Hằng |
+| DL | Dữ liệu | Cao Thu Hằng |
 | MB | Mô hình Mamba | Nguyễn Tiến Dũng |
 | TF | Mô hình Transformer | Đặng Duyên Hà |
-| ĐG | Huấn luyện & đánh giá | Cao Thanh Hằng |
+| ĐG | Huấn luyện & đánh giá | Ngô Thị Thanh Hằng |
 
 ---
 
