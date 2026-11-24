@@ -1,4 +1,4 @@
-"""Độ trễ và bộ nhớ khi gợi ý (RQ3). Owner: ĐG (Cao Thanh Hằng). Tuần 3.
+"""Độ trễ và bộ nhớ khi gợi ý (RQ3). Owner: ĐG (Ngô Thị Thanh Hằng). Tuần 3.
 
 Đặc tả — Mô tả bài toán mục 4.1–4.3:
 - Độ dài văn bản đã gõ: 256 -> 8.192 ký tự. Với mỗi độ dài: nạp văn bản bằng model.step(...) (Mamba: trạng thái

@@ -1,4 +1,4 @@
-"""Hàm gợi ý top-3 từ. Owner: ĐG (Cao Thanh Hằng). Tuần 2.
+"""Hàm gợi ý top-3 từ. Owner: ĐG (Ngô Thị Thanh Hằng). Tuần 2.
 
 Đặc tả — Mô tả bài toán mục 1, 4.2, 8:
     suggest(model, vocab, typed_text, k=3, beam=5, max_word_len=10) -> list[str]

@@ -1,4 +1,4 @@
-"""Tỷ lệ tiết kiệm phím gõ (KSR) và Top-1/Top-3. Owner: ĐG (Cao Thanh Hằng). Tuần 2–3.
+"""Tỷ lệ tiết kiệm phím gõ (KSR) và Top-1/Top-3. Owner: ĐG (Ngô Thị Thanh Hằng). Tuần 2–3.
 
 Đặc tả — Mô tả bài toán mục 4.2:
 - Top-1 / Top-3 accuracy cho chức năng (a) và (b) trên tập mô phỏng gõ phím (≈ 2.000 vị trí trong test, DL tạo).

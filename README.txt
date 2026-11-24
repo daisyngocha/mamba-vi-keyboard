@@ -12,10 +12,10 @@ Phạm vi: docs/ (Mô tả bài toán thực nghiệm v1, Hướng dẫn Tuần 
 
 NHÓM
   TN  Lê Thị Ngọc Hà (trưởng nhóm)
-  DL  Ngô Thị Thu Hằng (dữ liệu)
+  DL  Cao Thu Hằng (dữ liệu)
   MB  Nguyễn Tiến Dũng (mô hình Mamba)
   TF  Đặng Duyên Hà (mô hình Transformer)
-  ĐG  Cao Thanh Hằng (huấn luyện & đánh giá)
+  ĐG  Ngô Thị Thanh Hằng (huấn luyện & đánh giá)
 
 CẤU TRÚC
   configs/     base.yaml (TN) · mamba.yaml (MB) · transformer.yaml (TF) · smoke.yaml
