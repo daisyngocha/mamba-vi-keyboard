@@ -1,10 +1,12 @@
-"""Giao diện sinh từng bước (issue #22 MB, #23 TF): step() phải cho cùng logits với forward.
+"""Giao diện sinh từng bước (issue #22 MB, #23 TF): step() phải cho cùng logits với forward;
+reorder_state() chọn lại / nhân bản đúng chuỗi cho beam search (issue #26).
 Model chưa cài init_state/core_step (NotImplementedError) được skip, không fail.
 """
 import pytest
 import torch
 
 from models import build_model
+from models.base import BaseCharLM
 from tests.test_models import DEVICE, VOCAB, _cfg
 
 NAMES = ["dummy", "mamba", "transformer"]
@@ -63,3 +65,30 @@ def test_state_nbytes(name):
         assert sizes[16] == sizes[64] > 0, "trạng thái Mamba phải có kích thước cố định"
     if name == "transformer":
         assert sizes[64] == 4 * sizes[16] > 0, "KV cache phải tăng tuyến tính theo số ký tự"
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_reorder_state(name):
+    """Nạp 2 chuỗi, chọn lại theo idx = [1, 0, 1] rồi step tiếp = nạp lại từ đầu các chuỗi x[idx]."""
+    model = _build_eval(name)
+    x = torch.randint(VOCAB, (2, T), device=DEVICE)
+    idx = torch.tensor([1, 0, 1], device=DEVICE)
+    with torch.no_grad():
+        _, state = model.prefill(x[:, :-1])
+        got, _ = model.step(x[idx, -1], model.reorder_state(state, idx))
+        ref, _ = model.prefill(x[idx])
+    torch.testing.assert_close(got, ref, atol=1e-3, rtol=1e-3)
+
+
+def test_reorder_state_nested():
+    """Không cần model: state lồng nhau (dict / list / tuple / int) được chọn lại theo dim 0, có bản sao riêng."""
+    a = torch.arange(6.0).reshape(3, 2)
+    state = {"layers": [(a, a * 10)], "pos": 7}
+    out = BaseCharLM.reorder_state(state, [2, 2, 0])
+    k, v = out["layers"][0]
+    assert isinstance(out["layers"], list) and isinstance(out["layers"][0], tuple)
+    torch.testing.assert_close(k, a[[2, 2, 0]])
+    torch.testing.assert_close(v, a[[2, 2, 0]] * 10)
+    assert out["pos"] == 7
+    k[0].fill_(-1)  # cập nhật tại chỗ một nhánh không được làm đổi nhánh nhân bản cùng nguồn hay state gốc
+    assert k[1, 0] == 4 and a[2, 0] == 4

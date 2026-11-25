@@ -11,6 +11,9 @@ Sinh từng bước (tuần 2, issue #22 MB, #23 TF) — lớp con cài `init_st
     logits, state = model.step(token, state)           # token: int64 (B,) -> logits (B, vocab_size)
     logits, state = model.prefill(x)                   # x: (B, T) -> logits ở vị trí cuối; mặc định lặp step()
     model.state_nbytes(state)                          # số byte của trạng thái (RQ3: bộ nhớ khi gợi ý)
+    state = model.reorder_state(state, idx)            # chọn lại / nhân bản chuỗi theo idx (beam search của ĐG)
+Quy ước state (để reorder_state dùng chung được): mọi tensor trong state có chiều batch ở dim 0;
+giá trị không phải tensor (vd vị trí hiện tại của Transformer) là số dùng chung cho cả batch.
 Tiêu chí đúng (tests/test_step.py): logits từ step() ở mọi vị trí t = model(x)[:, t], sai số ≤ 1e-3 (fp32).
 step() chạy ở chế độ suy luận: gọi trong torch.no_grad() / inference_mode, model.eval().
 """
@@ -94,6 +97,22 @@ class BaseCharLM(nn.Module):
         if isinstance(state, (list, tuple)):
             return sum(BaseCharLM.state_nbytes(v) for v in state)
         return 0
+
+    @staticmethod
+    def reorder_state(state: Any, idx: torch.Tensor | list[int]) -> Any:
+        """Chọn lại / nhân bản các chuỗi trong batch theo idx — dùng cho beam search (evaluate/suggest.py).
+
+        idx: chỉ số chuỗi nguồn cho từng vị trí của batch mới, vd [1, 1, 0] -> batch 3 chuỗi, hai chuỗi đầu
+        chép từ chuỗi 1. Mọi tensor trong state được index_select theo dim 0 (tạo bản sao, nên core_step cập nhật
+        tại chỗ trên một nhánh không ảnh hưởng nhánh khác); giá trị không phải tensor giữ nguyên.
+        """
+        if isinstance(state, torch.Tensor):
+            return state.index_select(0, torch.as_tensor(idx, dtype=torch.long, device=state.device))
+        if isinstance(state, dict):
+            return {k: BaseCharLM.reorder_state(v, idx) for k, v in state.items()}
+        if isinstance(state, (list, tuple)):
+            return type(state)(BaseCharLM.reorder_state(v, idx) for v in state)
+        return state
 
     def num_params(self) -> int:
         return sum(p.numel() for p in self.parameters())  # parameters() đã bỏ trùng trọng số tie
