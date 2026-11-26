@@ -1,0 +1,58 @@
+{
+  "run_name": "mamba_L256_s0",
+  "model": "mamba",
+  "params": 7199552,
+  "seq_len": 256,
+  "steps": 6103,
+  "train_chars": 199983104,
+  "best_val_bpc": 1.7151,
+  "mean_tokens_per_sec": 67918,
+  "peak_mem_mb": 2740.2,
+  "train_time_s": 2985.1,
+  "resumed_from_step": null,
+  "gpu_name": "Tesla T4",
+  "config": {
+    "run_name": "mamba_L256_s0",
+    "seed": 0,
+    "data": {
+      "source": "wiki_vi",
+      "data_dir": null,
+      "train_file": "train.bin",
+      "seq_len": 256
+    },
+    "model": {
+      "name": "mamba",
+      "d_model": 368,
+      "n_layer": 8,
+      "tie_embeddings": true,
+      "backend": "cuda",
+      "d_state": 16,
+      "d_conv": 4,
+      "expand": 2,
+      "residual_in_fp32": true
+    },
+    "train": {
+      "batch_chars": 32768,
+      "grad_accum": 1,
+      "train_chars": 200000000,
+      "optimizer": "adamw",
+      "lr": 0.001,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "weight_decay": 0.1,
+      "warmup_frac": 0.02,
+      "grad_clip": 1.0,
+      "precision": "fp16",
+      "eval_every": 250,
+      "eval_batches": 20,
+      "log_every": 50,
+      "ckpt_every_min": 15
+    },
+    "paths": {
+      "checkpoint_dir": "checkpoints",
+      "log_dir": "logs"
+    }
+  }
+}
