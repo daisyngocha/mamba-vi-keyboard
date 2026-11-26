@@ -1,0 +1,3 @@
+run,model,L,seed,steps,best_val_bpc,last_val_bpc,drop_last_1k,gap_val_train,chars_per_sec,bench_cps,vs_bench_pct,peak_mem_mb,gpu_hours,gpu,resumed_from,ok_steps,ok_gpu,ok_speed,ok_nan,OK
+mamba_L256_s0,mamba,256,0,6103,1.7151,1.7151,0.008399999999999963,0.24085775898858164,67918,65623.0,3.49724943998293,2740.2,0.8291944444444445,Tesla T4,,True,True,True,True,True
+transformer_L256_s0,transformer,256,0,6103,1.6863,1.6863,0.019400000000000084,0.157639503467512,132129,138489.0,-4.592422502870264,2728.0,0.43191666666666667,Tesla T4,,True,True,True,True,True
