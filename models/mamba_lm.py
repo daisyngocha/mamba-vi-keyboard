@@ -12,15 +12,21 @@ Backend (cfg.backend), cùng tên và cùng kích thước tham số nên state_
 Khởi tạo theo quy ước của mamba-ssm (MambaLMHeadModel._init_weights): bias = 0 (trừ dt_proj.bias), out_proj chia
 sqrt(n_layer); A_log và D không chịu weight decay (_no_weight_decay).
 
-Tuần 2 (issue #22): cài `init_state(batch_size, device)` và `core_step(h, state)` theo giao diện ở models/base.py.
-    state = danh sách (conv_state, ssm_state) cho từng block, kích thước cố định (không phụ thuộc số ký tự đã nạp).
-    backend cuda: mixer.allocate_inference_cache(...) và mixer.step(h[:, None], conv_state, ssm_state) của mamba-ssm;
-    backend torch: TorchMambaMixer.step() tương ứng để tests/test_step.py chạy được trên CPU.
+Sinh từng bước (tuần 2, issue #22) — giao diện ở models/base.py:
+    state = list, mỗi block một tuple (conv_state, ssm_state); batch ở dim 0, kích thước CỐ ĐỊNH theo số ký tự đã nạp:
+        conv_state (B, d_inner, d_conv)  — d_conv đầu vào gần nhất của conv1d (dtype của conv1d.weight)
+        ssm_state  (B, d_inner, d_state) — trạng thái ẩn h_t của selective SSM (dtype của dt_proj.weight)
+    core_step(h, state): mỗi block h = h + mixer.step(RMSNorm(h)); trả state MỚI, không sửa state truyền vào
+        (mamba-ssm cập nhật tại chỗ nên backend cuda clone trước) -> giữ state cũ cho beam search / KSR an toàn.
+    prefill(x): nhanh — chạy forward cả đoạn một lần và lấy state cuối (cuda: forward kèm inference_params, kernel
+        tự ghi conv_state/ssm_state; torch: scan trả thêm state cuối). Chỉ áp dụng khi nạp từ state rỗng;
+        nạp tiếp vào state đã có thì lặp step() như lớp cha. Kết quả bằng bản lặp step() (tests/test_mamba_step.py).
 Trích dẫn: state-spaces/mamba (mamba-ssm) — docs/references.md.
 """
 from __future__ import annotations
 
 import math
+from types import SimpleNamespace
 
 import torch
 import torch.nn as nn
@@ -58,19 +64,46 @@ class TorchMambaMixer(nn.Module):
         self.D = nn.Parameter(torch.ones(self.d_inner))
         self.D._no_weight_decay = True
 
-    def forward(self, h: torch.Tensor) -> torch.Tensor:
+    def forward(self, h: torch.Tensor, return_state: bool = False):
+        """h (B, L, d_model) -> out (B, L, d_model); return_state=True trả thêm (conv_state, ssm_state) sau ký tự cuối."""
         L = h.shape[1]
         x, z = self.in_proj(h).chunk(2, dim=-1)                                 # (B, L, di)
-        x = F.silu(self.conv1d(x.transpose(1, 2))[..., :L].transpose(1, 2))    # conv nhân quả
+        x_in = x.transpose(1, 2)                                                # (B, di, L) — đầu vào conv
+        x = F.silu(self.conv1d(x_in)[..., :L].transpose(1, 2))                  # conv nhân quả
         dt, Bm, C = self.x_proj(x).split([self.dt_rank, self.d_state, self.d_state], dim=-1)
         dt = F.softplus(self.dt_proj(dt))                                       # (B, L, di)
-        y = self._scan(x.float(), dt.float(), -torch.exp(self.A_log.float()), Bm.float(), C.float())
+        y, last = self._scan(x.float(), dt.float(), -torch.exp(self.A_log.float()), Bm.float(), C.float())
         y = (y + x.float() * self.D.float()).to(z.dtype)
-        return self.out_proj(y * F.silu(z))
+        out = self.out_proj(y * F.silu(z))
+        if not return_state:
+            return out
+        conv_state = F.pad(x_in, (self.d_conv - L, 0))                          # giữ d_conv cột cuối (đệm 0 nếu L < d_conv)
+        return out, (conv_state.to(self.conv1d.weight.dtype), last.to(self.dt_proj.weight.dtype))
+
+    def allocate_state(self, batch_size: int, device=None):
+        """State rỗng, cùng dạng với mamba_ssm.Mamba.allocate_inference_cache."""
+        device = device if device is not None else self.out_proj.weight.device
+        conv = torch.zeros(batch_size, self.d_inner, self.d_conv, device=device, dtype=self.conv1d.weight.dtype)
+        ssm = torch.zeros(batch_size, self.d_inner, self.d_state, device=device, dtype=self.dt_proj.weight.dtype)
+        return conv, ssm
+
+    def step(self, h: torch.Tensor, conv_state: torch.Tensor, ssm_state: torch.Tensor):
+        """1 ký tự: h (B, d_model) -> (out (B, d_model), conv_state mới, ssm_state mới). Không sửa state đầu vào."""
+        x, z = self.in_proj(h).chunk(2, dim=-1)                                 # (B, di)
+        conv_state = torch.cat([conv_state[..., 1:], x[..., None].to(conv_state.dtype)], dim=-1)   # trượt cửa sổ
+        x = F.silu((conv_state * self.conv1d.weight[:, 0, :]).sum(-1) + self.conv1d.bias)
+        dt, Bm, C = self.x_proj(x).split([self.dt_rank, self.d_state, self.d_state], dim=-1)
+        dt = F.softplus(self.dt_proj(dt)).float()                               # (B, di)
+        A = -torch.exp(self.A_log.float())                                      # (di, N)
+        ssm = ssm_state.float() * torch.exp(dt[..., None] * A) + (dt[..., None] * Bm.float()[:, None, :]) * x.float()[..., None]
+        y = torch.einsum("bdn,bn->bd", ssm, C.float()) + x.float() * self.D.float()
+        out = self.out_proj(y.to(z.dtype) * F.silu(z))
+        return out, conv_state, ssm.to(ssm_state.dtype)
 
     @staticmethod
     def _scan(x, dt, A, Bm, C):
-        """h_t = exp(dt_t A) h_{t-1} + dt_t B_t x_t ;  y_t = <h_t, C_t>.  Tuần tự theo L (chậm, chỉ để đối chiếu)."""
+        """h_t = exp(dt_t A) h_{t-1} + dt_t B_t x_t ;  y_t = <h_t, C_t>.  Tuần tự theo L (chậm, chỉ để đối chiếu).
+        Trả (y (B, L, di), h_L (B, di, N))."""
         B_, L, di = x.shape
         state = x.new_zeros(B_, di, A.shape[1])
         ys = []
@@ -78,7 +111,7 @@ class TorchMambaMixer(nn.Module):
             dA = torch.exp(dt[:, t, :, None] * A)                               # (B, di, N)
             state = dA * state + (dt[:, t, :, None] * Bm[:, t, None, :]) * x[:, t, :, None]
             ys.append(torch.einsum("bdn,bn->bd", state, C[:, t]))
-        return torch.stack(ys, dim=1)
+        return torch.stack(ys, dim=1), state
 
 
 def make_mixer(cfg, layer_idx: int) -> nn.Module:
@@ -97,10 +130,43 @@ class MambaBlock(nn.Module):
         self.norm = RMSNorm(cfg.d_model)
         self.mixer = make_mixer(cfg, layer_idx)
         self.residual_in_fp32 = getattr(cfg, "residual_in_fp32", True)
+        self.is_cuda_backend = getattr(cfg, "backend", "cuda") == "cuda"
 
     def forward(self, h: torch.Tensor) -> torch.Tensor:
         residual = h.float() if self.residual_in_fp32 else h
         return residual + self.mixer(self.norm(h))
+
+    # ---- sinh từng bước ----
+    def allocate_state(self, batch_size: int, device=None):
+        if self.is_cuda_backend:
+            return self.mixer.allocate_inference_cache(batch_size, max_seqlen=1)   # (conv_state, ssm_state)
+        return self.mixer.allocate_state(batch_size, device)
+
+    def step(self, h: torch.Tensor, conv_state: torch.Tensor, ssm_state: torch.Tensor):
+        """h (B, d_model) -> (h mới, conv_state mới, ssm_state mới)."""
+        residual = h.float() if self.residual_in_fp32 else h
+        x = self.norm(h)
+        if self.is_cuda_backend:
+            conv_state, ssm_state = conv_state.clone(), ssm_state.clone()     # mamba-ssm ghi đè tại chỗ
+            out, conv_state, ssm_state = self.mixer.step(x[:, None], conv_state, ssm_state)
+            out = out[:, 0]
+        else:
+            out, conv_state, ssm_state = self.mixer.step(x, conv_state, ssm_state)
+        return residual + out, conv_state, ssm_state
+
+    def forward_with_state(self, h: torch.Tensor):
+        """Như forward, trả thêm (conv_state, ssm_state) sau ký tự cuối — dùng cho prefill nhanh."""
+        residual = h.float() if self.residual_in_fp32 else h
+        x = self.norm(h)
+        if self.is_cuda_backend:
+            # mamba-ssm: forward kèm inference_params (seqlen_offset = 0) chạy nhánh có return_last_state và ghi
+            # conv_state / ssm_state vào key_value_memory_dict[layer_idx]
+            params = SimpleNamespace(key_value_memory_dict={}, seqlen_offset=0)
+            out = self.mixer(x, inference_params=params)
+            state = params.key_value_memory_dict[self.mixer.layer_idx]
+        else:
+            out, state = self.mixer(x, return_state=True)
+        return residual + out, tuple(state)
 
 
 class MambaLM(BaseCharLM):
@@ -118,3 +184,28 @@ class MambaLM(BaseCharLM):
         for block in self.blocks:
             h = block(h)
         return h
+
+    # ---- sinh từng bước (tuần 2, issue #22) ----
+    def init_state(self, batch_size: int, device=None):
+        device = device if device is not None else self.embedding.weight.device
+        return [block.allocate_state(batch_size, device) for block in self.blocks]
+
+    def core_step(self, h: torch.Tensor, state):
+        new_state = []
+        for block, (conv_state, ssm_state) in zip(self.blocks, state):
+            h, conv_state, ssm_state = block.step(h, conv_state, ssm_state)
+            new_state.append((conv_state, ssm_state))
+        return h, new_state
+
+    @torch.no_grad()
+    def prefill(self, x: torch.Tensor, state=None):
+        """Nạp x (B, T) từ state rỗng bằng MỘT lần forward (nhanh), trả (logits vị trí cuối, state).
+        Nạp tiếp vào state đã có -> lặp step() như BaseCharLM.prefill."""
+        if state is not None:
+            return super().prefill(x, state)
+        h = self.embedding(x)
+        new_state = []
+        for block in self.blocks:
+            h, st = block.forward_with_state(h)
+            new_state.append(st)
+        return self.lm_head(self.norm_f(h[:, -1])), new_state
