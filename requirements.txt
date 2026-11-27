@@ -10,3 +10,5 @@ pytest
 # GPU Linux: mamba-ssm, causal-conv1d — cài từ wheel trong Kaggle Dataset mamba-btl-wheels (xem install_notes.txt)
 # Dự phòng: mamba.py (backend torch)
 # Tuần 3: gradio hoặc streamlit (demo)
+scipy            # figures.ipynb: kiểm định McNemar
+tabulate         # figures.ipynb: bảng markdown
