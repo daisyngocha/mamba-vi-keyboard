@@ -179,8 +179,10 @@ def main():
     ap.add_argument("--skip_ksr", action="store_true")
     ap.add_argument("--dtype", choices=["fp16", "fp32"], default="fp16",
                     help="fp16 = autocast trên GPU như lúc huấn luyện (eval_spec mục 0, mặc định); CPU luôn fp32")
-    ap.add_argument("--log_dir", default="logs")
+    ap.add_argument("--log_dir", default="logs", help="tương đối -> trên Kaggle là /kaggle/working/logs (cạnh log huấn luyện)")
     args = ap.parse_args()
+    from train import out_dir                         # cùng quy ước với train.py: Kaggle -> /kaggle/working/<log_dir>
+    log_dir = out_dir(args.log_dir)
 
     ckpt = Path(args.ckpt) if args.ckpt else find_checkpoint(args.run, args.checkpoint_dir)
     if ckpt is None or not ckpt.exists():
@@ -204,8 +206,8 @@ def main():
         records, secs = run_topk(model, vocab, items, l_ctx, args.dtype)
         res = {**common, **score_topk(records), "ms_per_item": round(1000 * secs / len(records), 1),
                "limit": args.limit}
-        write_eval(run_name, "topk" + suffix, res, Path(args.log_dir))
-        detail = Path(args.log_dir) / f"{run_name}_suggest{suffix}.jsonl"
+        write_eval(run_name, "topk" + suffix, res, log_dir)
+        detail = log_dir / f"{run_name}_suggest{suffix}.jsonl"
         detail.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
         print(f"Top-k: " + " · ".join(f"{m}: top1 {v['top1']:.3f} top3 {v['top3']:.3f}"
                                       for m, v in score_topk(records).items()) + f" -> {detail}", flush=True)
@@ -214,7 +216,7 @@ def main():
         test_ids = np.memmap(data_dir / "test.bin", dtype=np.uint16, mode="r")
         passages = ksr_passages(test_ids, vocab, args.ksr_passages, args.ksr_len, seed=0)
         summary, _ = run_ksr(model, vocab, passages, l_ctx, args.dtype)
-        write_eval(run_name, "ksr" + suffix, {**common, **summary}, Path(args.log_dir))
+        write_eval(run_name, "ksr" + suffix, {**common, **summary}, log_dir)
         print(f"KSR {summary['ksr']:.3f} ({summary['chars']} ký tự, {summary['keys']} phím, "
               f"{summary['selections']} lần chạm chọn, {summary['time_s']} s)", flush=True)
 
