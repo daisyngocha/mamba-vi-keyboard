@@ -13,7 +13,7 @@ from data.loader import DOC_ID, CharVocab
 from evaluate.common import TypingContext, load_run, write_eval
 from evaluate.ksr import ksr_passages, run_ksr, run_topk, score_topk, simulate_typing
 from evaluate.suggest import split_prefix, suggest, suggest_from_state
-from tests.test_models import _cfg
+from tests.test_models import DEVICE, _cfg
 
 ITOS = ["<unk>", "<doc>", " ", ".", "a", "b"]          # 2 chữ cái: a, b
 VOCAB = CharVocab(ITOS)
@@ -26,7 +26,7 @@ def _tiny(name):
     over = {"d_model": 32, "n_layer": 2} if name == "transformer" else {"d_model": 32, "n_layer": 2}
     if name == "transformer":
         over["n_head"] = 2
-    return build_model(_cfg(name, **over), len(ITOS)).eval()
+    return build_model(_cfg(name, **over), len(ITOS)).to(DEVICE).eval()   # GPU + mamba-ssm -> backend cuda
 
 
 def _exhaustive(model, typed, max_len, k=3):
@@ -37,7 +37,7 @@ def _exhaustive(model, typed, max_len, k=3):
     for n in range(0 if prefix else 1, max_len + 1):
         for gen in itertools.product("ab", repeat=n):
             w = prefix + "".join(gen)
-            ids = torch.tensor([VOCAB.encode(typed + "".join(gen))])
+            ids = torch.tensor([VOCAB.encode(typed + "".join(gen))], device=DEVICE)
             with torch.no_grad():
                 logp = torch.log_softmax(model(ids)[0].float(), -1)
             T0 = len(VOCAB.encode(typed))
@@ -93,12 +93,12 @@ def test_typing_context_incremental_equals_prefill(name):
         ctx.push(piece)
         got, _ = ctx.current()
         with torch.no_grad():
-            want, _ = model.prefill(torch.tensor([ctx.ids[-20:]]))
+            want, _ = model.prefill(torch.tensor([ctx.ids[-20:]], device=DEVICE))
         torch.testing.assert_close(got, want, atol=1e-4, rtol=1e-4)
     ctx.push("ab ba ab ba ab ba")                                 # > 20 ký tự -> cửa sổ trượt
     got, _ = ctx.current()
     with torch.no_grad():
-        want, _ = model.prefill(torch.tensor([ctx.ids[-20:]]))
+        want, _ = model.prefill(torch.tensor([ctx.ids[-20:]], device=DEVICE))
     torch.testing.assert_close(got, want, atol=1e-4, rtol=1e-4)
 
 
@@ -157,7 +157,8 @@ def test_end_to_end_checkpoint(tmp_path, name):
     cfg = {"run_name": f"{name}_L64_s0", "seed": 0, "data": {"seq_len": 64},
            "model": {k: v for k, v in vars(model.cfg).items()}}
     path = tmp_path / "ckpt_latest.pt"
-    torch.save({"model": model.state_dict(), "config": cfg, "vocab": ITOS, "step": 123}, path)
+    sd = {k: v.cpu() for k, v in model.state_dict().items()}
+    torch.save({"model": sd, "config": cfg, "vocab": ITOS, "step": 123}, path)
     m2, vocab, info = load_run(path, torch.device("cpu"))
     assert info["seq_len"] == 64 and info["step"] == 123
     items = [{"id": 0, "mode": "a", "typed": "ab ba a", "prefix": "a", "target": "ab"},
@@ -179,7 +180,7 @@ def test_reduced_precision_states(name):
     autocast — kernel causal_conv1d_update của mamba-ssm đòi conv_state cùng dtype đầu vào — và suggest chạy được,
     logits gần bản fp32."""
     from tests.test_models import DEVICE, _build
-    model = _build(name).eval() if DEVICE.type == "cuda" else _tiny(name)
+    model = _build(name).eval() if DEVICE.type == "cuda" else _tiny(name)          # GPU: cỡ thật, backend cuda
     dev, adt = (DEVICE, torch.float16) if DEVICE.type == "cuda" else (torch.device("cpu"), torch.bfloat16)
     vocab = VOCAB if DEVICE.type != "cuda" else CharVocab(ITOS + [chr(0x100 + i) for i in range(len(model.embedding.weight) - len(ITOS))])
     x = torch.tensor([vocab.encode("ab ba ab ba ab")], device=dev)
