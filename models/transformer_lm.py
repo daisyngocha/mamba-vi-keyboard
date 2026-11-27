@@ -31,7 +31,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.base import BaseCharLM, RMSNorm
+from models.base import BaseCharLM, RMSNorm, compute_dtype
 
 
 def rope_cos_sin(seq_len: int, head_dim: int, base: float, device, offset: int = 0):
@@ -145,7 +145,7 @@ class TransformerLM(BaseCharLM):
         """KV cache rỗng (độ dài 0) cho từng layer."""
         device = device if device is not None else self.embedding.weight.device
         attn = self.blocks[0].attn
-        dtype = attn.qkv.weight.dtype
+        dtype = compute_dtype(torch.device(device), attn.qkv.weight.dtype)   # fp16 khi đánh giá dưới autocast fp16
 
         def empty():
             return torch.zeros(batch_size, attn.n_head, 0, attn.head_dim, device=device, dtype=dtype)
