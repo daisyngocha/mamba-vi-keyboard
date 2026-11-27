@@ -263,7 +263,7 @@ print("Giờ GPU thực tế = train_time_s trong *_summary.json (trung bình c�
 
 cells.append(md("""## Bảng 3 — RQ1: BPC test, độ chính xác gợi ý (Top-k) và KSR
 
-Từ `logs/<run>_eval.json` (`evaluate/ksr.py`, fp16, T4). **BPC test**: toàn bộ `test.bin`, cửa sổ không chồng dài L (thấp hơn là tốt hơn). **Δ** = Transformer − Mamba cùng L, seed. **p BPC**: kiểm định t ghép cặp trên các cửa sổ test (cùng cửa sổ cho 2 model); **p Top-1 / p Top-3 (McNemar)**: kiểm định ghép cặp chính xác trên 2.000 vị trí của `typing_sim` (từ `logs/<run>_suggest.jsonl`). p lớn nghĩa là chênh lệch không có ý nghĩa thống kê."""))
+Từ `logs/<run>_eval.json` (`evaluate/ksr.py`, fp16, T4). **BPC test**: toàn bộ `test.bin`, cửa sổ không chồng dài L (thấp hơn là tốt hơn). **Δ** = Transformer − Mamba cùng L, seed. **p BPC**: kiểm định t ghép cặp trên các khối ≈ 10k ký tự liền nhau của test (cùng khối cho 2 model; không dùng từng cửa sổ vì cửa sổ kề nhau cùng bài viết, không độc lập); **p Top-1 / p Top-3 (McNemar)**: kiểm định ghép cặp chính xác trên 2.000 vị trí của `typing_sim` (từ `logs/<run>_suggest.jsonl`). p lớn nghĩa là chênh lệch không có ý nghĩa thống kê."""))
 
 cells.append(code("""from scipy.stats import binomtest, ttest_rel
 
@@ -281,9 +281,21 @@ def mcnemar(run_m, run_t, key):
     c = sum(t[key] and not m[key] for m, t in zip(M, T))
     return binomtest(min(b, c), b + c, 0.5).pvalue if b + c else 1.0
 
+BLOCK_CHARS = 10_240   # khối ≈ 10k ký tự liền nhau: cửa sổ kề nhau cùng bài viết nên không độc lập
+
 def p_bpc(em, et):
-    wm, wt = em.get("bpc", {}).get("per_window"), et.get("bpc", {}).get("per_window")
-    return ttest_rel(wt, wm).pvalue if wm and wt and len(wm) == len(wt) else float("nan")
+    # t ghép cặp trên trung bình BPC theo khối ≈ 10k ký tự (40 cửa sổ ở L256, 2 cửa sổ ở L4096)
+    import numpy as np
+    bm, bt = em.get("bpc", {}), et.get("bpc", {})
+    wm, wt = bm.get("per_window"), bt.get("per_window")
+    if not (wm and wt and len(wm) == len(wt)):
+        return float("nan")
+    k = max(1, BLOCK_CHARS // bm["seq_len"])
+    n = len(wm) // k
+    if n < 2:
+        return float("nan")
+    blk = lambda w: np.asarray(w[: n * k]).reshape(n, k).mean(1)
+    return ttest_rel(blk(wt), blk(wm)).pvalue
 
 NAN = float("nan")
 
