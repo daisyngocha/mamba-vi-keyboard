@@ -1,0 +1,54 @@
+{
+  "run_name": "mamba_L256_s0",
+  "topk": {
+    "checkpoint_step": 6103,
+    "l_ctx": 256,
+    "suggest_cfg": {
+      "k": 3,
+      "beam": 5,
+      "max_word_len": 10
+    },
+    "dtype": "fp16",
+    "device": "Tesla T4",
+    "a": {
+      "n": 1000,
+      "top1": 0.666,
+      "top3": 0.782,
+      "top3_nocase": 0.782
+    },
+    "b": {
+      "n": 1000,
+      "top1": 0.285,
+      "top3": 0.395,
+      "top3_nocase": 0.396
+    },
+    "all": {
+      "n": 2000,
+      "top1": 0.4755,
+      "top3": 0.5885,
+      "top3_nocase": 0.589
+    },
+    "ms_per_item": 47.4,
+    "limit": null
+  },
+  "ksr": {
+    "checkpoint_step": 6103,
+    "l_ctx": 256,
+    "suggest_cfg": {
+      "k": 3,
+      "beam": 5,
+      "max_word_len": 10
+    },
+    "dtype": "fp16",
+    "device": "Tesla T4",
+    "passages": 50,
+    "chars": 19932,
+    "keys": 13729,
+    "selections": 3811,
+    "ksr": 0.3112081075657235,
+    "ksr_passage_mean": 0.311211393807813,
+    "ksr_passage_std": 0.05488919627634495,
+    "suggest_calls": 8513,
+    "time_s": 400.9
+  }
+}

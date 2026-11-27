@@ -1,0 +1,54 @@
+{
+  "run_name": "transformer_L256_s0",
+  "topk": {
+    "checkpoint_step": 6103,
+    "l_ctx": 256,
+    "suggest_cfg": {
+      "k": 3,
+      "beam": 5,
+      "max_word_len": 10
+    },
+    "dtype": "fp16",
+    "device": "Tesla T4",
+    "a": {
+      "n": 1000,
+      "top1": 0.677,
+      "top3": 0.781,
+      "top3_nocase": 0.781
+    },
+    "b": {
+      "n": 1000,
+      "top1": 0.285,
+      "top3": 0.395,
+      "top3_nocase": 0.397
+    },
+    "all": {
+      "n": 2000,
+      "top1": 0.481,
+      "top3": 0.588,
+      "top3_nocase": 0.589
+    },
+    "ms_per_item": 30.5,
+    "limit": null
+  },
+  "ksr": {
+    "checkpoint_step": 6103,
+    "l_ctx": 256,
+    "suggest_cfg": {
+      "k": 3,
+      "beam": 5,
+      "max_word_len": 10
+    },
+    "dtype": "fp16",
+    "device": "Tesla T4",
+    "passages": 50,
+    "chars": 19932,
+    "keys": 13493,
+    "selections": 3817,
+    "ksr": 0.3230483644390929,
+    "ksr_passage_mean": 0.3230843665676876,
+    "ksr_passage_std": 0.05154984978569608,
+    "suggest_calls": 8277,
+    "time_s": 257.4
+  }
+}
