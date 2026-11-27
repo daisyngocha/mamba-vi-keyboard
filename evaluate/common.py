@@ -48,7 +48,8 @@ def load_run(ckpt_path: str | Path, device: torch.device | None = None):
 
 
 def autocast_ctx(device: torch.device, dtype: str):
-    """fp32 (mặc định) hoặc fp16 bằng autocast — trọng số giữ fp32 như lúc huấn luyện."""
+    """fp16 bằng autocast (mặc định khi đánh giá, eval_spec mục 0) hoặc fp32 — trọng số giữ fp32 như lúc huấn luyện.
+    State sinh từng bước (conv/ssm state của Mamba, KV cache) theo dtype autocast (models/base.compute_dtype)."""
     if dtype == "fp16" and device.type == "cuda":
         return torch.autocast("cuda", dtype=torch.float16)
     return nullcontext()

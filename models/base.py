@@ -25,6 +25,14 @@ import torch
 import torch.nn as nn
 
 
+def compute_dtype(device: torch.device, default: torch.dtype) -> torch.dtype:
+    """dtype tính toán thực tế: dtype của autocast nếu đang bật (vd đánh giá fp16), ngược lại `default`
+    (dtype trọng số). Dùng để cấp phát / ép state sinh từng bước cùng dtype với phép tính."""
+    if torch.is_autocast_enabled(device.type):
+        return torch.get_autocast_dtype(device.type)
+    return default
+
+
 class RMSNorm(nn.Module):
     def __init__(self, d: int, eps: float = 1e-5):
         super().__init__()

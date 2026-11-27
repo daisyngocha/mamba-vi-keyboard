@@ -177,8 +177,8 @@ def main():
     ap.add_argument("--ksr_len", type=int, default=400)
     ap.add_argument("--skip_topk", action="store_true")
     ap.add_argument("--skip_ksr", action="store_true")
-    ap.add_argument("--dtype", choices=["fp32", "fp16"], default="fp32",
-                    help="fp16 = autocast trên GPU (chưa kiểm với mamba-ssm); mặc định fp32")
+    ap.add_argument("--dtype", choices=["fp16", "fp32"], default="fp16",
+                    help="fp16 = autocast trên GPU như lúc huấn luyện (eval_spec mục 0, mặc định); CPU luôn fp32")
     ap.add_argument("--log_dir", default="logs")
     args = ap.parse_args()
 

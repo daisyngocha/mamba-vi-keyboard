@@ -171,3 +171,26 @@ def test_end_to_end_checkpoint(tmp_path, name):
     write_eval(info["run_name"], "ksr", summ, tmp_path)
     data = json.loads(out.read_text(encoding="utf-8"))
     assert set(data) == {"run_name", "topk", "ksr"}
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_reduced_precision_states(name):
+    """Đánh giá dưới autocast (GPU: fp16 như eval_spec; CPU: bf16 thay thế): state sinh từng bước cùng dtype
+    autocast — kernel causal_conv1d_update của mamba-ssm đòi conv_state cùng dtype đầu vào — và suggest chạy được,
+    logits gần bản fp32."""
+    from tests.test_models import DEVICE, _build
+    model = _build(name).eval() if DEVICE.type == "cuda" else _tiny(name)
+    dev, adt = (DEVICE, torch.float16) if DEVICE.type == "cuda" else (torch.device("cpu"), torch.bfloat16)
+    vocab = VOCAB if DEVICE.type != "cuda" else CharVocab(ITOS + [chr(0x100 + i) for i in range(len(model.embedding.weight) - len(ITOS))])
+    x = torch.tensor([vocab.encode("ab ba ab ba ab")], device=dev)
+    with torch.no_grad():
+        ref, _ = model.prefill(x)
+        with torch.autocast(dev.type, dtype=adt):
+            logits, state = model.prefill(x)
+            logits, state = model.step(x[:, -1], state)
+            empty = model.init_state(2, dev)
+            words = suggest(model, vocab, "ab ba a", max_word_len=4)
+    for t in _tensors(state) + _tensors(empty):
+        assert t.dtype == adt
+    assert len(words) == 3
+    torch.testing.assert_close(model.prefill(x)[0], ref)            # ngoài autocast vẫn là fp32 như cũ

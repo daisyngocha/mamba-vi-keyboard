@@ -32,7 +32,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.base import BaseCharLM, RMSNorm
+from models.base import BaseCharLM, RMSNorm, compute_dtype
 
 
 class TorchMambaMixer(nn.Module):
@@ -80,11 +80,11 @@ class TorchMambaMixer(nn.Module):
         conv_state = F.pad(x_in, (self.d_conv - L, 0))                          # giữ d_conv cột cuối (đệm 0 nếu L < d_conv)
         return out, (conv_state.to(self.conv1d.weight.dtype), last.to(self.dt_proj.weight.dtype))
 
-    def allocate_state(self, batch_size: int, device=None):
-        """State rỗng, cùng dạng với mamba_ssm.Mamba.allocate_inference_cache."""
+    def allocate_state(self, batch_size: int, device=None, dtype=None):
+        """State rỗng, cùng dạng với mamba_ssm.Mamba.allocate_inference_cache (dtype=None -> dtype trọng số)."""
         device = device if device is not None else self.out_proj.weight.device
-        conv = torch.zeros(batch_size, self.d_inner, self.d_conv, device=device, dtype=self.conv1d.weight.dtype)
-        ssm = torch.zeros(batch_size, self.d_inner, self.d_state, device=device, dtype=self.dt_proj.weight.dtype)
+        conv = torch.zeros(batch_size, self.d_inner, self.d_conv, device=device, dtype=dtype or self.conv1d.weight.dtype)
+        ssm = torch.zeros(batch_size, self.d_inner, self.d_state, device=device, dtype=dtype or self.dt_proj.weight.dtype)
         return conv, ssm
 
     def step(self, h: torch.Tensor, conv_state: torch.Tensor, ssm_state: torch.Tensor):
@@ -137,21 +137,30 @@ class MambaBlock(nn.Module):
         return residual + self.mixer(self.norm(h))
 
     # ---- sinh từng bước ----
+    def _state_dtype(self, device) -> torch.dtype:
+        # State theo dtype tính toán: fp32 bình thường, fp16 khi đánh giá dưới autocast fp16 — kernel
+        # causal_conv1d_update của mamba-ssm bắt buộc conv_state cùng dtype với đầu vào.
+        return compute_dtype(device, self.mixer.in_proj.weight.dtype)
+
     def allocate_state(self, batch_size: int, device=None):
+        device = device if device is not None else self.mixer.in_proj.weight.device
+        dtype = self._state_dtype(torch.device(device))
         if self.is_cuda_backend:
-            return self.mixer.allocate_inference_cache(batch_size, max_seqlen=1)   # (conv_state, ssm_state)
-        return self.mixer.allocate_state(batch_size, device)
+            return self.mixer.allocate_inference_cache(batch_size, max_seqlen=1, dtype=dtype)   # (conv, ssm)
+        return self.mixer.allocate_state(batch_size, device, dtype)
 
     def step(self, h: torch.Tensor, conv_state: torch.Tensor, ssm_state: torch.Tensor):
         """h (B, d_model) -> (h mới, conv_state mới, ssm_state mới)."""
         residual = h.float() if self.residual_in_fp32 else h
         x = self.norm(h)
+        dtype = self._state_dtype(h.device)
         if self.is_cuda_backend:
-            conv_state, ssm_state = conv_state.clone(), ssm_state.clone()     # mamba-ssm ghi đè tại chỗ
+            # bản sao (mamba-ssm ghi đè tại chỗ) và đúng dtype tính toán
+            conv_state, ssm_state = conv_state.to(dtype, copy=True), ssm_state.to(dtype, copy=True)
             out, conv_state, ssm_state = self.mixer.step(x[:, None], conv_state, ssm_state)
             out = out[:, 0]
         else:
-            out, conv_state, ssm_state = self.mixer.step(x, conv_state, ssm_state)
+            out, conv_state, ssm_state = self.mixer.step(x, conv_state.to(dtype), ssm_state.to(dtype))
         return residual + out, conv_state, ssm_state
 
     def forward_with_state(self, h: torch.Tensor):
@@ -166,7 +175,8 @@ class MambaBlock(nn.Module):
             state = params.key_value_memory_dict[self.mixer.layer_idx]
         else:
             out, state = self.mixer(x, return_state=True)
-        return residual + out, tuple(state)
+        dtype = self._state_dtype(h.device)
+        return residual + out, tuple(t.to(dtype) for t in state)
 
 
 class MambaLM(BaseCharLM):
