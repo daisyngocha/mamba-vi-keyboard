@@ -215,8 +215,9 @@ def main():
     if not args.skip_ksr:
         test_ids = np.memmap(data_dir / "test.bin", dtype=np.uint16, mode="r")
         passages = ksr_passages(test_ids, vocab, args.ksr_passages, args.ksr_len, seed=0)
-        summary, _ = run_ksr(model, vocab, passages, l_ctx, args.dtype)
-        write_eval(run_name, "ksr" + suffix, {**common, **summary}, log_dir)
+        summary, rows = run_ksr(model, vocab, passages, l_ctx, args.dtype)
+        # giữ kết quả từng đoạn (start, chars, keys, selections, ksr) để so ghép cặp giữa 2 model (cùng 50 đoạn, seed 0)
+        write_eval(run_name, "ksr" + suffix, {**common, **summary, "per_passage": rows}, log_dir)
         print(f"KSR {summary['ksr']:.3f} ({summary['chars']} ký tự, {summary['keys']} phím, "
               f"{summary['selections']} lần chạm chọn, {summary['time_s']} s)", flush=True)
 
