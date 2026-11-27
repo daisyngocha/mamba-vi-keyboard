@@ -16,11 +16,11 @@ cells.append(md("""# figures — bảng và biểu đồ từ log huấn luyện
 | Hình 2 | Val BPC tốt nhất theo L | RQ1 sơ bộ | `fig2_best_val_bpc_vs_L.png` |
 | Hình 3 | Tốc độ huấn luyện và bộ nhớ đỉnh theo L (bench.py, T4) | RQ2 | `fig3_train_speed_mem_vs_L.png` |
 | Bảng 2 | Tốc độ bench + thời gian huấn luyện thực tế theo L | RQ2 | `rq2_table.md` |
-| Bảng 3 | Top-1/Top-3 (mode a, b, gộp) và KSR từ `logs/<run>_eval.json`, so ghép cặp Mamba vs Transformer (McNemar) | RQ1 | `rq1_suggest_table.md` |
+| Bảng 3 | BPC toàn bộ test, Top-1/Top-3 (mode a, b, gộp) và KSR từ `logs/<run>_eval.json`, so ghép cặp Mamba vs Transformer (t ghép cặp, McNemar) | RQ1 | `rq1_suggest_table.md` |
 
 **Cách chạy:** mở từ thư mục gốc repo (hoặc `notebooks/`), Run All. Trên Kaggle: clone repo như cell 2 của `train_run.ipynb` rồi chạy notebook này (không cần GPU). Có log mới merge vào `logs/` thì chạy lại là hình tự cập nhật.
 
-Lưu ý khi đọc: `val_bpc` lúc huấn luyện chỉ đo trên 20 batch val cố định, để theo dõi. Con số so sánh cuối cùng trong báo cáo là BPC trên toàn bộ test (`docs/eval_spec.md` mục 1, tuần 3)."""))
+Lưu ý khi đọc: `val_bpc` lúc huấn luyện chỉ đo trên 20 batch val cố định, để theo dõi. Con số so sánh cuối cùng trong báo cáo là BPC trên toàn bộ test (`docs/eval_spec.md` mục 1) ở Bảng 3."""))
 
 cells.append(code("""import json, math, re
 from pathlib import Path
@@ -261,11 +261,11 @@ t["Giờ GPU thực tế T / M"] = [
 display(Markdown(t.to_markdown(index=False, disable_numparse=True)))
 print("Giờ GPU thực tế = train_time_s trong *_summary.json (trung bình các seed); '–' = chưa có lượt.")"""))
 
-cells.append(md("""## Bảng 3 — RQ1: độ chính xác gợi ý (Top-k) và KSR
+cells.append(md("""## Bảng 3 — RQ1: BPC test, độ chính xác gợi ý (Top-k) và KSR
 
-Từ `logs/<run>_eval.json` (`evaluate/ksr.py`, fp16, T4). **Δ** = Transformer − Mamba cùng L, seed; **p (McNemar)**: kiểm định ghép cặp chính xác trên 2.000 vị trí của `typing_sim` (từ `logs/<run>_suggest.jsonl`) — p lớn nghĩa là chênh lệch không có ý nghĩa thống kê."""))
+Từ `logs/<run>_eval.json` (`evaluate/ksr.py`, fp16, T4). **BPC test**: toàn bộ `test.bin`, cửa sổ không chồng dài L (thấp hơn là tốt hơn). **Δ** = Transformer − Mamba cùng L, seed. **p BPC**: kiểm định t ghép cặp trên các cửa sổ test (cùng cửa sổ cho 2 model); **p Top-1 / p Top-3 (McNemar)**: kiểm định ghép cặp chính xác trên 2.000 vị trí của `typing_sim` (từ `logs/<run>_suggest.jsonl`). p lớn nghĩa là chênh lệch không có ý nghĩa thống kê."""))
 
-cells.append(code("""from scipy.stats import binomtest
+cells.append(code("""from scipy.stats import binomtest, ttest_rel
 
 def load_eval(run):
     p = LOGS / f"{run}_eval.json"
@@ -281,36 +281,48 @@ def mcnemar(run_m, run_t, key):
     c = sum(t[key] and not m[key] for m, t in zip(M, T))
     return binomtest(min(b, c), b + c, 0.5).pvalue if b + c else 1.0
 
+def p_bpc(em, et):
+    wm, wt = em.get("bpc", {}).get("per_window"), et.get("bpc", {}).get("per_window")
+    return ttest_rel(wt, wm).pvalue if wm and wt and len(wm) == len(wt) else float("nan")
+
+NAN = float("nan")
+
 rows3 = []
 for L in LS:
     for seed in (0, 1, 2):
         rm, rt = f"mamba_L{L}_s{seed}", f"transformer_L{L}_s{seed}"
         em, et = load_eval(rm), load_eval(rt)
         for run, e in [(rm, em), (rt, et)]:
-            if e is None or "topk" not in e:
+            if e is None or not ({"topk", "bpc"} & e.keys()):
                 continue
-            t, k = e["topk"], e.get("ksr", {})
-            rows3.append({"Lượt": run, "Top-1": t["all"]["top1"], "Top-3": t["all"]["top3"],
-                          "Top-3 a": t["a"]["top3"], "Top-3 b": t["b"]["top3"], "KSR": k.get("ksr", float("nan")),
-                          "ms/vị trí": t.get("ms_per_item")})
+            t, k = e.get("topk"), e.get("ksr", {})
+            rows3.append({"Lượt": run, "BPC test": e.get("bpc", {}).get("bpc", NAN),
+                          "Top-1": t["all"]["top1"] if t else NAN, "Top-3": t["all"]["top3"] if t else NAN,
+                          "Top-3 a": t["a"]["top3"] if t else NAN, "Top-3 b": t["b"]["top3"] if t else NAN,
+                          "KSR": k.get("ksr", NAN), "ms/vị trí": t.get("ms_per_item") if t else NAN})
         if em and et:
+            def d(f):
+                try:
+                    return f(et) - f(em)
+                except (KeyError, TypeError):
+                    return NAN
             rows3.append({"Lượt": f"Δ (T − M) L{L} s{seed}",
-                          "Top-1": et["topk"]["all"]["top1"] - em["topk"]["all"]["top1"],
-                          "Top-3": et["topk"]["all"]["top3"] - em["topk"]["all"]["top3"],
-                          "Top-3 a": et["topk"]["a"]["top3"] - em["topk"]["a"]["top3"],
-                          "Top-3 b": et["topk"]["b"]["top3"] - em["topk"]["b"]["top3"],
-                          "KSR": et.get("ksr", {}).get("ksr", float("nan")) - em.get("ksr", {}).get("ksr", float("nan")),
-                          "ms/vị trí": float("nan"),
+                          "BPC test": d(lambda e: e["bpc"]["bpc"]),
+                          "Top-1": d(lambda e: e["topk"]["all"]["top1"]),
+                          "Top-3": d(lambda e: e["topk"]["all"]["top3"]),
+                          "Top-3 a": d(lambda e: e["topk"]["a"]["top3"]),
+                          "Top-3 b": d(lambda e: e["topk"]["b"]["top3"]),
+                          "KSR": d(lambda e: e["ksr"]["ksr"]), "ms/vị trí": NAN, "p BPC": p_bpc(em, et),
                           "p Top-1": mcnemar(rm, rt, "hit1"), "p Top-3": mcnemar(rm, rt, "hit3")})
 t3 = pd.DataFrame(rows3)
 if t3.empty:
     print("Chưa có logs/*_eval.json")
 else:
     fmt = t3.copy()
-    for c in ["Top-1", "Top-3", "Top-3 a", "Top-3 b", "KSR"]:
-        fmt[c] = [("" if pd.isna(v) else (f"{v:+.3f}" if str(n).startswith("Δ") else f"{v:.3f}").replace(".", ","))
+    for c, nd in [("BPC test", 4), ("Top-1", 3), ("Top-3", 3), ("Top-3 a", 3), ("Top-3 b", 3), ("KSR", 3)]:
+        fmt[c] = [("" if pd.isna(v) else (f"{v:+.{nd}f}" if str(n).startswith("Δ") else f"{v:.{nd}f}").replace(".", ","))
                   for v, n in zip(t3[c], t3["Lượt"])]
-    for c in ["ms/vị trí", "p Top-1", "p Top-3"]:
+    for c in ["ms/vị trí", "p BPC", "p Top-1", "p Top-3"]:
         if c in fmt:
             fmt[c] = ["" if pd.isna(v) else f"{v:.2f}".replace(".", ",") for v in t3[c]]
     (OUT / "rq1_suggest_table.md").write_text(fmt.fillna("").to_markdown(index=False, disable_numparse=True), encoding="utf-8")
