@@ -1,6 +1,8 @@
-"""Top-1 / Top-3 trên typing_sim.jsonl và KSR (tỷ lệ tiết kiệm phím gõ). Owner: ĐG (Ngô Thị Thanh Hằng). Issue #24.
+"""Chấm một checkpoint cho RQ1: BPC test, Top-1 / Top-3 trên typing_sim.jsonl và KSR (tỷ lệ tiết kiệm phím gõ).
+Owner: ĐG (Ngô Thị Thanh Hằng). Issue #24.
 
-Đúng theo docs/eval_spec.md mục 3–4:
+Đúng theo docs/eval_spec.md mục 1, 3–4:
+- BPC: toàn bộ test.bin, cửa sổ không chồng dài l_ctx (evaluate/bpc.py). Chạy trước vì nhanh (≈ 1 phút).
 - Top-k: với mỗi dòng {mode, typed, prefix, target} của typing_sim.jsonl, lấy 3 gợi ý cho `typed` (cắt còn l_ctx
   ký tự cuối). Đúng khi target khớp CHÍNH XÁC (cả hoa/thường) với gợi ý 1 (Top-1) / một trong 3 (Top-3).
   Báo riêng mode a, b và gộp; chỉ số phụ Top-3 không phân biệt hoa/thường.
@@ -10,12 +12,13 @@
   KSR = (tổng ký tự − tổng phím thực bấm) / tổng ký tự.
   Ngữ cảnh trước mỗi đoạn = phần bài viết đứng trước nó trong test.bin (như người dùng đã gõ trước đó), cắt còn
   l_ctx ký tự cuối cùng với phần đã gõ của đoạn.
-- Kết quả ghi vào khóa "topk", "ksr" của logs/<run_name>_eval.json (evaluate.common.write_eval);
+- Kết quả ghi vào khóa "bpc", "topk", "ksr" của logs/<run_name>_eval.json (evaluate.common.write_eval);
   chi tiết từng vị trí Top-k ghi logs/<run_name>_suggest.jsonl (DL dùng cho phân tích lỗi, eval_spec mục 6).
 
 Chạy (thư mục gốc repo; trên Kaggle: Add Input output notebook có checkpoints/<run_name>/ckpt_latest.pt):
-    python -m evaluate.ksr --run mamba_L256_s0                    # đủ Top-k (2.000 vị trí) + KSR (50 đoạn)
-    python -m evaluate.ksr --run mamba_L256_s0 --limit 200 --skip_ksr          # chạy nhanh để thử
+    python -m evaluate.ksr --run mamba_L256_s0           # đủ BPC test + Top-k (2.000 vị trí) + KSR (50 đoạn)
+    python -m evaluate.ksr --run mamba_L256_s0 --skip_topk --skip_ksr          # chỉ BPC test
+    python -m evaluate.ksr --run mamba_L256_s0 --limit 200 --skip_ksr --skip_bpc   # chạy nhanh để thử
     python -m evaluate.ksr --ckpt path/to/ckpt_latest.pt --l_ctx 2048          # thí nghiệm ngoại suy (mục 6)
 """
 from __future__ import annotations
@@ -30,6 +33,7 @@ import numpy as np
 import torch
 
 from data.loader import DOC_ID, UNK_ID, CharVocab, resolve_data_dir
+from evaluate.bpc import run_bpc
 from evaluate.common import TypingContext, autocast_ctx, find_checkpoint, is_letter, load_run, write_eval
 from evaluate.suggest import split_prefix, suggest_from_state
 
@@ -166,7 +170,7 @@ def run_ksr(model, vocab, passages: list[dict], l_ctx: int, dtype: str = "fp32")
 
 # ---------------------------------------------------------------- CLI
 def main():
-    ap = argparse.ArgumentParser(description="Top-1/Top-3 (typing_sim) và KSR cho một checkpoint")
+    ap = argparse.ArgumentParser(description="BPC test, Top-1/Top-3 (typing_sim) và KSR cho một checkpoint")
     ap.add_argument("--run", help="tên lượt, vd mamba_L1024_s0 (tự tìm checkpoint)")
     ap.add_argument("--ckpt", help="đường dẫn ckpt_latest.pt (thay cho --run)")
     ap.add_argument("--checkpoint_dir", default="checkpoints")
@@ -175,6 +179,7 @@ def main():
     ap.add_argument("--limit", type=int, default=None, help="chỉ lấy N dòng đầu typing_sim (chạy thử)")
     ap.add_argument("--ksr_passages", type=int, default=50)
     ap.add_argument("--ksr_len", type=int, default=400)
+    ap.add_argument("--skip_bpc", action="store_true")
     ap.add_argument("--skip_topk", action="store_true")
     ap.add_argument("--skip_ksr", action="store_true")
     ap.add_argument("--dtype", choices=["fp16", "fp32"], default="fp16",
@@ -199,6 +204,10 @@ def main():
           f"{device} {args.dtype} | data {data_dir}", flush=True)
     common = {"checkpoint_step": info["step"], "l_ctx": l_ctx, "suggest_cfg": SUGGEST_CFG, "dtype": args.dtype,
               "device": torch.cuda.get_device_name(device) if device.type == "cuda" else "cpu"}
+
+    if not args.skip_bpc:
+        run_bpc(model, run_name, info, data_dir, l_ctx, args.dtype, log_dir, write_eval,
+                common={k: v for k, v in common.items() if k != "suggest_cfg"})
 
     if not args.skip_topk:
         items = [json.loads(line) for line in open(data_dir / "typing_sim.jsonl", encoding="utf-8")]
