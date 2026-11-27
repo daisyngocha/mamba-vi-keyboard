@@ -70,7 +70,7 @@ def run_topk(model, vocab, items: list[dict], l_ctx: int, dtype: str = "fp32", l
         if log_every and j % log_every == 0:
             s = score_topk(records)["all"]
             print(f"  top-k {j}/{len(items)} | top1 {s['top1']:.3f} top3 {s['top3']:.3f} "
-                  f"| {1000 * (time.perf_counter() - t0) / j:.1f} ms/vị trí")
+                  f"| {1000 * (time.perf_counter() - t0) / j:.1f} ms/vị trí", flush=True)
     return records, time.perf_counter() - t0
 
 
@@ -155,7 +155,7 @@ def run_ksr(model, vocab, passages: list[dict], l_ctx: int, dtype: str = "fp32")
         rows.append({"start": p["start"], **r, "ksr": (r["chars"] - r["keys"]) / r["chars"]})
         if j % 10 == 0:
             c, k = sum(x["chars"] for x in rows), sum(x["keys"] for x in rows)
-            print(f"  KSR {j}/{len(passages)} đoạn | KSR {(c - k) / c:.3f} | {time.perf_counter() - t0:.0f} s")
+            print(f"  KSR {j}/{len(passages)} đoạn | KSR {(c - k) / c:.3f} | {time.perf_counter() - t0:.0f} s", flush=True)
     chars, keys = sum(r["chars"] for r in rows), sum(r["keys"] for r in rows)
     summary = {"passages": len(rows), "chars": chars, "keys": keys, "selections": sum(r["selections"] for r in rows),
                "ksr": (chars - keys) / chars, "ksr_passage_mean": float(np.mean([r["ksr"] for r in rows])),
@@ -194,7 +194,7 @@ def main():
     suffix = "" if l_ctx == info["seq_len"] else f"_ctx{l_ctx}"
     device = next(model.parameters()).device
     print(f"[{run_name}] {info['model']} step {info['step']} | backend {info['backend']} | l_ctx {l_ctx} | "
-          f"{device} {args.dtype} | data {data_dir}")
+          f"{device} {args.dtype} | data {data_dir}", flush=True)
     common = {"checkpoint_step": info["step"], "l_ctx": l_ctx, "suggest_cfg": SUGGEST_CFG, "dtype": args.dtype,
               "device": torch.cuda.get_device_name(device) if device.type == "cuda" else "cpu"}
 
@@ -208,7 +208,7 @@ def main():
         detail = Path(args.log_dir) / f"{run_name}_suggest{suffix}.jsonl"
         detail.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
         print(f"Top-k: " + " · ".join(f"{m}: top1 {v['top1']:.3f} top3 {v['top3']:.3f}"
-                                      for m, v in score_topk(records).items()) + f" -> {detail}")
+                                      for m, v in score_topk(records).items()) + f" -> {detail}", flush=True)
 
     if not args.skip_ksr:
         test_ids = np.memmap(data_dir / "test.bin", dtype=np.uint16, mode="r")
@@ -216,7 +216,7 @@ def main():
         summary, _ = run_ksr(model, vocab, passages, l_ctx, args.dtype)
         write_eval(run_name, "ksr" + suffix, {**common, **summary}, Path(args.log_dir))
         print(f"KSR {summary['ksr']:.3f} ({summary['chars']} ký tự, {summary['keys']} phím, "
-              f"{summary['selections']} lần chạm chọn, {summary['time_s']} s)")
+              f"{summary['selections']} lần chạm chọn, {summary['time_s']} s)", flush=True)
 
 
 if __name__ == "__main__":
