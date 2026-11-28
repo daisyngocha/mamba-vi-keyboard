@@ -16,6 +16,7 @@ cells.append(md("""# figures — bảng và biểu đồ từ log huấn luyện
 | Hình 2 | Val BPC tốt nhất theo L | RQ1 sơ bộ | `fig2_best_val_bpc_vs_L.png` |
 | Hình 3 | Tốc độ huấn luyện và bộ nhớ đỉnh theo L (bench.py, T4) | RQ2 | `fig3_train_speed_mem_vs_L.png` |
 | Bảng 2 | Tốc độ bench + thời gian huấn luyện thực tế theo L | RQ2 | `rq2_table.md` |
+| Bảng 4 | Phân loại lỗi Top-1 sai: dấu thanh, dấu chữ, viết hoa, chữ gốc (`evaluate/errors.py`, eval_spec mục 6) | Lỗi đặc thù tiếng Việt | `errors_table.md` |
 | Bảng 3 | BPC toàn bộ test, Top-1/Top-3 (mode a, b, gộp) và KSR từ `logs/<run>_eval.json`, so ghép cặp Mamba vs Transformer (t ghép cặp, McNemar) | RQ1 | `rq1_suggest_table.md` |
 
 **Cách chạy:** mở từ thư mục gốc repo (hoặc `notebooks/`), Run All. Trên Kaggle: clone repo như cell 2 của `train_run.ipynb` rồi chạy notebook này (không cần GPU). Có log mới merge vào `logs/` thì chạy lại là hình tự cập nhật.
@@ -32,6 +33,9 @@ from IPython.display import Markdown, display
 
 ROOT = next(p for p in [Path.cwd(), *Path.cwd().parents] if (p / "train.py").exists() and (p / "logs").is_dir())
 LOGS, OUT = ROOT / "logs", ROOT / "figures"
+import sys
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))      # để import evaluate.* khi mở notebook từ notebooks/
 OUT.mkdir(exist_ok=True)
 
 RUN_RE = re.compile(r"^(mamba|transformer)_L(\\d+)_s(\\d+)$")      # bỏ try_*, compare_*, _smoke
@@ -339,6 +343,33 @@ else:
             fmt[c] = ["" if pd.isna(v) else f"{v:.2f}".replace(".", ",") for v in t3[c]]
     (OUT / "rq1_suggest_table.md").write_text(fmt.fillna("").to_markdown(index=False, disable_numparse=True), encoding="utf-8")
     display(Markdown(fmt.fillna("").to_markdown(index=False, disable_numparse=True)))"""))
+
+cells.append(md("""## Bảng 4 — Lỗi đặc thù tiếng Việt trên các ca Top-1 sai
+
+Khóa `errors` trong `logs/<run>_eval.json` (`evaluate/errors.py`, eval_spec mục 6). Tỷ lệ tính trên số ca Top-1 sai (mode a + b). **Target viết hoa** = trong nhóm sai chữ gốc, tỷ lệ từ đúng là tên riêng / đầu câu."""))
+
+cells.append(code("""from evaluate.errors import CATEGORIES, LABELS
+rows4 = []
+for L in LS:
+    for seed in (0, 1, 2):
+        for m in ("mamba", "transformer"):
+            run = f"{m}_L{L}_s{seed}"
+            e = load_eval(run)
+            if e is None or "errors" not in e:
+                continue
+            a = e["errors"]["all"]
+            row = {"Lượt": run, "Top-1 sai": f"{a['n_top1_wrong']}/{a['n_positions']}"}
+            row.update({LABELS[c]: f"{a['rates'][c]:.1%}".replace(".", ",") for c in CATEGORIES})
+            cg = a["counts"]["chu_goc"]
+            row["Target viết hoa (trong chữ gốc)"] = f"{a['chu_goc_target_capitalized'] / cg:.0%}" if cg else ""
+            rows4.append(row)
+t4 = pd.DataFrame(rows4)
+if t4.empty:
+    print("Chưa có khóa errors — chạy python -m evaluate.errors --run <run> hoặc eval_run")
+else:
+    t4 = t4.loc[:, (t4 != "0,0%").any()]          # bỏ cột loại lỗi không xuất hiện ở lượt nào
+    (OUT / "errors_table.md").write_text(t4.to_markdown(index=False, disable_numparse=True), encoding="utf-8")
+    display(Markdown(t4.to_markdown(index=False, disable_numparse=True)))"""))
 
 nb = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
