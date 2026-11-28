@@ -17,6 +17,7 @@ cells.append(md("""# figures — bảng và biểu đồ từ log huấn luyện
 | Hình 3 | Tốc độ huấn luyện và bộ nhớ đỉnh theo L (bench.py, T4) | RQ2 | `fig3_train_speed_mem_vs_L.png` |
 | Bảng 2 | Tốc độ bench + thời gian huấn luyện thực tế theo L | RQ2 | `rq2_table.md` |
 | Bảng 4 | Phân loại lỗi Top-1 sai: dấu thanh, dấu chữ, viết hoa, chữ gốc (`evaluate/errors.py`, eval_spec mục 6) | Lỗi đặc thù tiếng Việt | `errors_table.md` |
+| Hình 4, Bảng 5 | Độ trễ 1 phím gõ (step + gợi ý) và kích thước trạng thái theo độ dài văn bản đã gõ T (`evaluate/latency.py`) | RQ3 | `fig4_latency_vs_T.png`, `rq3_table.md` |
 | Bảng 3 | BPC toàn bộ test, Top-1/Top-3 (mode a, b, gộp) và KSR từ `logs/<run>_eval.json`, so ghép cặp Mamba vs Transformer (t ghép cặp, McNemar) | RQ1 | `rq1_suggest_table.md` |
 
 **Cách chạy:** mở từ thư mục gốc repo (hoặc `notebooks/`), Run All. Trên Kaggle: clone repo như cell 2 của `train_run.ipynb` rồi chạy notebook này (không cần GPU). Có log mới merge vào `logs/` thì chạy lại là hình tự cập nhật.
@@ -370,6 +371,60 @@ else:
     t4 = t4.loc[:, (t4 != "0,0%").any()]          # bỏ cột loại lỗi không xuất hiện ở lượt nào
     (OUT / "errors_table.md").write_text(t4.to_markdown(index=False, disable_numparse=True), encoding="utf-8")
     display(Markdown(t4.to_markdown(index=False, disable_numparse=True)))"""))
+
+cells.append(md("""## Hình 4, Bảng 5 — RQ3: độ trễ khi gõ và bộ nhớ theo độ dài văn bản đã gõ T
+
+Từ `logs/latency/<run>_<thiết bị>.csv` (`evaluate/latency.py`, eval_spec mục 5): nạp trước T ký tự test, rồi đo 50 phím liên tiếp, mỗi phím = `step` + gợi ý (beam 5). Trung vị; batch 1. **State** = trạng thái Mamba / KV cache Transformer của 1 chuỗi sau khi nạp T ký tự. Transformer chỉ huấn luyện tới L = 4.096: với T lớn hơn chỉ đo tốc độ, bộ nhớ (cache dài T), không xét chất lượng."""))
+
+cells.append(code("""lat_files = sorted((LOGS / "latency").glob("*.csv"))
+lat = pd.concat([pd.read_csv(f) for f in lat_files], ignore_index=True) if lat_files else pd.DataFrame()
+if lat.empty:
+    print("Chưa có logs/latency/*.csv — chạy python -m evaluate.latency --run <run> (eval_run: LATENCY = True)")
+else:
+    for dev, g in lat.groupby("device"):
+        fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4))
+        for run, d in g.groupby("run"):
+            d = d.sort_values("T")
+            m = d.model.iloc[0]
+            lab = f"{LABEL[m]} (train L = {vn(d.train_L.iloc[0])})"
+            ls = "-" if d.train_L.iloc[0] == g[g.model == m].train_L.min() else "--"
+            a1.plot(d["T"], d.total_ms, "o" + ls, color=COLOR[m], markersize=6, label=lab)
+            a2.plot(d["T"], d.state_mb, "o" + ls, color=COLOR[m], markersize=6, label=lab)
+            last = d.iloc[-1]
+            a1.annotate(f"{vn(last.total_ms, 1)} ms", (last["T"], last.total_ms), xytext=(6, 0), textcoords="offset points",
+                        va="center", fontsize=9, color="#333333")
+            a2.annotate(f"{vn(last.state_mb, 2)} MB", (last["T"], last.state_mb), xytext=(6, 0), textcoords="offset points",
+                        va="center", fontsize=9, color="#333333")
+        for a in (a1, a2):
+            a.set_xscale("log", base=2)
+            ticks = sorted(g["T"].unique())
+            a.set_xticks(ticks, [vn(t) for t in ticks])
+            a.minorticks_off()
+            a.set_xlabel("Độ dài văn bản đã gõ T (ký tự, thang log)")
+            a.set_ylim(bottom=0)
+            a.legend()
+        a1.set_ylabel("ms / phím gõ (trung vị 50 phím)")
+        a1.set_title("Độ trễ 1 phím: step + 3 gợi ý (thấp hơn là tốt hơn)", loc="left")
+        a2.set_ylabel("MB / chuỗi")
+        a2.yaxis.set_major_formatter(COMMA)
+        a2.set_title("Kích thước trạng thái (KV cache / SSM state)", loc="left")
+        fig.suptitle(f"RQ3 — {dev}, {g.dtype.iloc[0]}, batch 1", x=0.01, ha="left", fontsize=12)
+        fig.tight_layout()
+        tag = "".join(c for c in str(dev).lower().replace("tesla ", "") if c.isalnum())
+        fig.savefig(OUT / ("fig4_latency_vs_T.png" if dev.lower().startswith("tesla") else f"fig4_latency_vs_T_{tag}.png"),
+                    bbox_inches="tight")
+        plt.show()
+    t5 = lat.sort_values(["device", "model", "train_L", "T"])[["device", "run", "T", "total_ms", "step_ms", "suggest_ms",
+                                                                "total_p90_ms", "peak_mem_mb", "state_mb", "model_mb"]]
+    t5 = t5.rename(columns={"device": "Thiết bị", "run": "Lượt", "total_ms": "ms/phím", "step_ms": "step ms",
+                            "suggest_ms": "gợi ý ms", "total_p90_ms": "p90 ms", "peak_mem_mb": "Bộ nhớ đỉnh MB",
+                            "state_mb": "State MB", "model_mb": "Model MB"})
+    fmt = t5.copy()
+    for c, nd in [("ms/phím", 1), ("step ms", 2), ("gợi ý ms", 1), ("p90 ms", 1), ("Bộ nhớ đỉnh MB", 0), ("State MB", 2), ("Model MB", 1)]:
+        fmt[c] = [("" if pd.isna(v) else vn(v, nd)) for v in t5[c]]
+    fmt["T"] = [vn(v) for v in t5["T"]]
+    (OUT / "rq3_table.md").write_text(fmt.to_markdown(index=False, disable_numparse=True), encoding="utf-8")
+    display(Markdown(fmt.to_markdown(index=False, disable_numparse=True)))"""))
 
 nb = nbf.v4.new_notebook(cells=cells, metadata={
     "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},

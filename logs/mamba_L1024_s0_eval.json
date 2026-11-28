@@ -1395,5 +1395,137 @@
         "ksr": 0.3675
       }
     ]
+  },
+  "errors": {
+    "a": {
+      "n_positions": 1000,
+      "n_top1_wrong": 330,
+      "counts": {
+        "vi_tri_dau": 0,
+        "dau_thanh": 5,
+        "dau_chu": 2,
+        "viet_hoa": 0,
+        "hoa_va_dau": 0,
+        "chu_goc": 323,
+        "khong_goi_y": 0
+      },
+      "rates": {
+        "vi_tri_dau": 0.0,
+        "dau_thanh": 0.015151515151515152,
+        "dau_chu": 0.006060606060606061,
+        "viet_hoa": 0.0,
+        "hoa_va_dau": 0.0,
+        "chu_goc": 0.9787878787878788,
+        "khong_goi_y": 0.0
+      },
+      "diacritic_or_case_but_in_top3": 1,
+      "chu_goc_target_capitalized": 97,
+      "examples": {
+        "dau_thanh": [
+          "giá → giả",
+          "Hóa → Hoà",
+          "Thế → Thể",
+          "tự → từ",
+          "thị → thì"
+        ],
+        "dau_chu": [
+          "phần → phản",
+          "quân → quản"
+        ],
+        "chu_goc": [
+          "tháng → thời",
+          "sĩ → sẽ",
+          "làm → lên",
+          "M → Microbes",
+          "mở → mái"
+        ]
+      }
+    },
+    "b": {
+      "n_positions": 1000,
+      "n_top1_wrong": 717,
+      "counts": {
+        "vi_tri_dau": 0,
+        "dau_thanh": 1,
+        "dau_chu": 0,
+        "viet_hoa": 1,
+        "hoa_va_dau": 0,
+        "chu_goc": 715,
+        "khong_goi_y": 0
+      },
+      "rates": {
+        "vi_tri_dau": 0.0,
+        "dau_thanh": 0.001394700139470014,
+        "dau_chu": 0.0,
+        "viet_hoa": 0.001394700139470014,
+        "hoa_va_dau": 0.0,
+        "chu_goc": 0.99721059972106,
+        "khong_goi_y": 0.0
+      },
+      "diacritic_or_case_but_in_top3": 1,
+      "chu_goc_target_capitalized": 191,
+      "examples": {
+        "dau_thanh": [
+          "Lê → Lễ"
+        ],
+        "viet_hoa": [
+          "the → The"
+        ],
+        "chu_goc": [
+          "của → Katz",
+          "chủ → đường",
+          "và → nến",
+          "đoạt → tham",
+          "đi → máu"
+        ]
+      }
+    },
+    "all": {
+      "n_positions": 2000,
+      "n_top1_wrong": 1047,
+      "counts": {
+        "vi_tri_dau": 0,
+        "dau_thanh": 6,
+        "dau_chu": 2,
+        "viet_hoa": 1,
+        "hoa_va_dau": 0,
+        "chu_goc": 1038,
+        "khong_goi_y": 0
+      },
+      "rates": {
+        "vi_tri_dau": 0.0,
+        "dau_thanh": 0.0057306590257879654,
+        "dau_chu": 0.0019102196752626551,
+        "viet_hoa": 0.0009551098376313276,
+        "hoa_va_dau": 0.0,
+        "chu_goc": 0.9914040114613181,
+        "khong_goi_y": 0.0
+      },
+      "diacritic_or_case_but_in_top3": 2,
+      "chu_goc_target_capitalized": 288,
+      "examples": {
+        "dau_thanh": [
+          "giá → giả",
+          "Hóa → Hoà",
+          "Thế → Thể",
+          "Lê → Lễ",
+          "tự → từ"
+        ],
+        "dau_chu": [
+          "phần → phản",
+          "quân → quản"
+        ],
+        "viet_hoa": [
+          "the → The"
+        ],
+        "chu_goc": [
+          "của → Katz",
+          "tháng → thời",
+          "chủ → đường",
+          "sĩ → sẽ",
+          "và → nến"
+        ]
+      }
+    }
   }
 }
