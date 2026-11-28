@@ -12,7 +12,7 @@ Owner: ĐG (Ngô Thị Thanh Hằng). Issue #24.
   KSR = (tổng ký tự − tổng phím thực bấm) / tổng ký tự.
   Ngữ cảnh trước mỗi đoạn = phần bài viết đứng trước nó trong test.bin (như người dùng đã gõ trước đó), cắt còn
   l_ctx ký tự cuối cùng với phần đã gõ của đoạn.
-- Kết quả ghi vào khóa "bpc", "topk", "ksr" của logs/<run_name>_eval.json (evaluate.common.write_eval);
+- Kết quả ghi vào khóa "bpc", "topk", "errors" (phân loại lỗi Top-1, evaluate/errors.py), "ksr" của logs/<run_name>_eval.json (evaluate.common.write_eval);
   chi tiết từng vị trí Top-k ghi logs/<run_name>_suggest.jsonl (DL dùng cho phân tích lỗi, eval_spec mục 6).
 
 Chạy (thư mục gốc repo; trên Kaggle: Add Input output notebook có checkpoints/<run_name>/ckpt_latest.pt):
@@ -34,6 +34,7 @@ import torch
 
 from data.loader import DOC_ID, UNK_ID, CharVocab, resolve_data_dir
 from evaluate.bpc import run_bpc
+from evaluate.errors import summarize as summarize_errors
 from evaluate.common import TypingContext, autocast_ctx, find_checkpoint, is_letter, load_run, write_eval
 from evaluate.suggest import split_prefix, suggest_from_state
 
@@ -216,6 +217,7 @@ def main():
         res = {**common, **score_topk(records), "ms_per_item": round(1000 * secs / len(records), 1),
                "limit": args.limit}
         write_eval(run_name, "topk" + suffix, res, log_dir)
+        write_eval(run_name, "errors" + suffix, summarize_errors(records), log_dir)     # eval_spec mục 6 (DL)
         detail = log_dir / f"{run_name}_suggest{suffix}.jsonl"
         detail.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
         print(f"Top-k: " + " · ".join(f"{m}: top1 {v['top1']:.3f} top3 {v['top3']:.3f}"
